@@ -1,0 +1,618 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap');
+
+:root {
+  --bg-primary: #060B08;
+  --green-glow: #1B8C3A;
+  --yellow-glow: #8CBD2A;
+  --gold: #E6C64C;
+  --white: #FFFFFF;
+  --text-muted: rgba(255, 255, 255, 0.68);
+  --glass-bg: rgba(16, 26, 19, 0.76);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --wpp-color: #25D366;
+  --insta-color: #E1306C;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  overflow: hidden;
+  height: 100dvh;
+  width: 100vw;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--white);
+  cursor: default;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================ */
+/* WEB ART TOP & BOTTOM FRAME BORDERS           */
+/* ============================================ */
+.webart-frame {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: clamp(14px, 2.2vh, 22px);
+  z-index: 100;
+  pointer-events: none;
+  background-image: url('../assets/frame-border.png');
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
+.webart-frame-top {
+  top: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.webart-frame-bottom {
+  bottom: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  transform: rotate(180deg);
+}
+
+/* ============================================ */
+/* PARTICLES & BACKGROUND LAYER                 */
+/* ============================================ */
+#particles {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: #04090c;
+}
+
+.bg-layer .bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+  filter: brightness(0.85) contrast(1.1);
+}
+
+.bg-image-desktop {
+  display: none;
+}
+.bg-image-mobile {
+  display: block;
+}
+
+@media (min-width: 992px) {
+  .bg-image-desktop {
+    display: block;
+  }
+  .bg-image-mobile {
+    display: none;
+  }
+}
+
+/* Subtle Repeating Brand Map Pattern Layer */
+.bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: url('../assets/pattern.png');
+  background-repeat: repeat;
+  background-size: 260px auto;
+  opacity: 0.08;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+/* Full Screen Uniform Horizontal Gradient Overlay (Left Blue -> Center Transition -> Right Green) */
+.bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, 
+    rgba(8, 28, 64, 0.88) 0%, 
+    rgba(10, 36, 68, 0.82) 25%, 
+    rgba(12, 45, 52, 0.78) 50%, 
+    rgba(11, 56, 32, 0.82) 75%, 
+    rgba(9, 62, 28, 0.88) 100%
+  );
+}
+
+.bg-vignette {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.7);
+}
+
+/* ============================================ */
+/* MAIN CONTENT LAYOUT (MOBILE FIRST)           */
+/* ============================================ */
+.content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  text-align: center;
+}
+
+.hero-left-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-right-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* ============================================ */
+/* MAP ARTWORK & LOGO (LEFT COLUMN CONTENT)     */
+/* ============================================ */
+.map-art-wrapper {
+  position: relative;
+  width: clamp(200px, 38vmin, 310px);
+  height: clamp(220px, 42vmin, 340px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: float-artwork 5s ease-in-out infinite;
+}
+
+.map-art-wrapper .art-light-beam {
+  position: absolute;
+  inset: -15px;
+  background: radial-gradient(circle, rgba(230, 198, 76, 0.3) 0%, rgba(140, 189, 42, 0.2) 50%, transparent 75%);
+  filter: blur(24px);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.map-art-wrapper .main-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 22px rgba(140, 189, 42, 0.35));
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.hero-left-column:hover .main-artwork {
+  transform: scale(1.03) translateY(-3px);
+  filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 30px rgba(230, 198, 76, 0.5));
+}
+
+/* New White Floating Logo Anchored Below Map */
+.logo-wrapper {
+  margin-top: clamp(-30px, -4vmin, -16px);
+  margin-bottom: clamp(8px, 1.5vmin, 16px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.3s ease;
+}
+
+.logo-wrapper:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.logo-wrapper .main-logo {
+  height: clamp(58px, 10.5vmin, 92px);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 22px rgba(140, 189, 42, 0.45));
+}
+
+/* ============================================ */
+/* SLOGAN                                       */
+/* ============================================ */
+.slogan {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(12px, 1.8vmin, 15px);
+  font-weight: 400;
+  color: var(--white);
+  letter-spacing: 0.2px;
+  margin-bottom: clamp(14px, 2.5vmin, 22px);
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+.slogan .text-yellow,
+.slogan .text-highlight {
+  background: linear-gradient(90deg, #25D366 0%, #00D2FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  filter: drop-shadow(0 2px 10px rgba(0, 210, 255, 0.35));
+}
+
+.slogan strong {
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* ============================================ */
+/* ACTIONS GROUP (WhatsApp & Instagram Cards)    */
+/* ============================================ */
+.actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.2vmin, 12px);
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: clamp(10px, 1.5vmin, 16px);
+}
+
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: clamp(9px, 1.3vmin, 12px) clamp(12px, 1.8vmin, 16px);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--white);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.action-card:hover::before {
+  left: 100%;
+}
+
+.action-card:hover {
+  transform: translateY(-3px) scale(1.015);
+  background: rgba(24, 38, 28, 0.88);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.whatsapp-card:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 22px rgba(37, 211, 102, 0.28);
+}
+
+.instagram-card:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 22px rgba(225, 48, 108, 0.28);
+}
+
+.drive-card:hover {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 22px rgba(230, 198, 76, 0.32);
+}
+
+.card-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.wpp-icon-bg {
+  background: rgba(37, 211, 102, 0.16);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  color: var(--wpp-color);
+}
+
+.insta-icon-bg {
+  background: rgba(225, 48, 108, 0.16);
+  border: 1px solid rgba(225, 48, 108, 0.3);
+  color: var(--insta-color);
+}
+
+.drive-icon-bg {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.card-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.action-card:hover .card-icon {
+  transform: scale(1.08);
+}
+
+.card-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  flex: 1;
+}
+
+.card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(13px, 1.8vmin, 15px);
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1.2;
+}
+
+.card-subtitle {
+  font-size: clamp(10px, 1.3vmin, 12px);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.card-arrow-circle {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.card-arrow-circle svg {
+  width: 15px;
+  height: 15px;
+  transition: transform 0.3s ease;
+}
+
+.action-card:hover .card-arrow-circle {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.action-card:hover .card-arrow-circle svg {
+  transform: translate(2px, -2px);
+}
+
+/* ============================================ */
+/* OFFICIAL VOTE 2050 BRAND ARTWORK             */
+/* ============================================ */
+.vote-art-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  transition: transform 0.3s ease;
+}
+
+.vote-art-wrapper:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+
+.vote-art-wrapper .vote-art-img {
+  width: 100%;
+  height: auto;
+  max-height: clamp(65px, 12vmin, 95px);
+  object-fit: contain;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 22px rgba(37, 211, 102, 0.3));
+}
+
+/* ============================================ */
+/* ELECTORAL LEGAL DISCLAIMER FOOTER (100% TRUE VIEWPORT CENTERED) */
+/* ============================================ */
+.electoral-footer {
+  position: fixed;
+  bottom: clamp(18px, 2.6vh, 26px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 0 16px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(8.5px, 1.05vmin, 10.5px);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.48);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.electoral-footer .foot-sep {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 8.5px;
+}
+
+/* ============================================ */
+/* ANIMATION ITEMS                              */
+/* ============================================ */
+.anim-item {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anim-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes float-artwork {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+/* ============================================ */
+/* DESKTOP SPECIFIC SPLIT SCREEN (>= 992px)      */
+/* ============================================ */
+@media (min-width: 992px) {
+  .content {
+    max-width: 1240px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 56px;
+    text-align: center;
+  }
+
+  /* Left Column: Photo & Logo occupies full left side (Larger) */
+  .hero-left-column {
+    justify-content: center;
+  }
+
+  .map-art-wrapper {
+    width: min(100%, 520px);
+    height: min(58vh, 520px);
+  }
+
+  .logo-wrapper {
+    margin-top: -28px;
+    margin-bottom: 0;
+  }
+
+  .logo-wrapper .main-logo {
+    height: min(17vh, 140px);
+  }
+
+  /* Right Column: Slogan, Cards & Vote 2050 (Centered) */
+  .hero-right-column {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 520px;
+  }
+
+  .slogan {
+    font-size: clamp(20px, 2.4vw, 28px);
+    text-align: center;
+    margin-bottom: 28px;
+    line-height: 1.35;
+  }
+
+  .actions-group {
+    max-width: 480px;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .action-card {
+    padding: 16px 24px;
+    border-radius: 18px;
+  }
+
+  .card-icon {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    border-radius: 14px;
+  }
+
+  .card-icon svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .card-title {
+    font-size: 16px;
+  }
+
+  .card-subtitle {
+    font-size: 13px;
+  }
+
+  .card-arrow-circle {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .card-arrow-circle svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .vote-art-wrapper {
+    max-width: 440px;
+  }
+
+  .vote-art-wrapper .vote-art-img {
+    max-height: min(15vh, 120px);
+  }
+}
+
+/* Extra Large Desktop Screens */
+@media (min-width: 1400px) {
+  .content {
+    max-width: 1360px;
+    gap: 64px;
+    padding: 40px 80px;
+  }
+
+  .map-art-wrapper {
+    width: min(100%, 560px);
+    height: min(62vh, 560px);
+  }
+
+  .logo-wrapper .main-logo {
+    height: min(20vh, 160px);
+  }
+
+  .hero-right-column {
+    max-width: 560px;
+  }
+
+  .actions-group, .vote-art-wrapper {
+    max-width: 480px;
+  }
+
+  .vote-art-wrapper .vote-art-img {
+    max-height: min(18vh, 140px);
+  }
+}

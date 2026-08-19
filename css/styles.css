@@ -419,7 +419,7 @@ html, body {
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 324px;
+  max-width: 290px;
   margin: clamp(4px, 0.8vh, 10px) auto 0;
   transition: transform 0.3s ease;
 }
@@ -431,7 +431,7 @@ html, body {
 .vote-art-wrapper .vote-art-img {
   width: 100%;
   height: auto;
-  max-height: clamp(60px, 8.8vh, 82px);
+  max-height: clamp(52px, 7.8vh, 74px);
   object-fit: contain;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 22px rgba(37, 211, 102, 0.3));
 }
@@ -580,11 +580,11 @@ html, body {
   }
 
   .vote-art-wrapper {
-    max-width: 396px;
+    max-width: 356px;
   }
 
   .vote-art-wrapper .vote-art-img {
-    max-height: min(13.5vh, 108px);
+    max-height: min(12vh, 96px);
   }
 }
 
@@ -614,10 +614,10 @@ html, body {
   }
 
   .vote-art-wrapper {
-    max-width: 432px;
+    max-width: 388px;
   }
 
   .vote-art-wrapper .vote-art-img {
-    max-height: min(16vh, 126px);
+    max-height: min(14vh, 112px);
   }
 }

@@ -513,6 +513,7 @@
         if (dialogCaption) dialogCaption.textContent = caption;
         closeMenu();
         if (!photoDialog.open) photoDialog.showModal();
+        photoDialog.scrollTop = 0;
         body.classList.add('photo-open');
         dialogClose?.focus({ preventScroll: true });
         syncGalleryPlayback();

@@ -18,3 +18,6 @@
 - Usar os ícones SVG oficiais do Lucide em `assets/icons/lucide.svg` para setas e controles; nunca substituir ícones por caracteres Unicode ou emojis. Preservar rótulos acessíveis nos controles.
 - Manter o menu e as seções sem numeração decorativa. Evitar legendas e textos redundantes.
 - A galeria deve avançar automaticamente em ciclo infinito, respeitando movimento reduzido e a interação do visitante. Cada cidade precisa de fotografia real, com identificação, fonte e crédito verificáveis.
+- A direção visual exclusiva para celular/tablet fica em `css/mobile.css`, aplicada por `media="(max-width: 1023px)"`. Manter base de 320 px e ampliações em 390, 600 e 768 px; telas horizontais com até 600 px de altura têm composição própria. O desktop continua nos estilos gerais.
+- No mobile, manter controles principais com pelo menos 48 px, rótulos de ação com 15 px, margens que incluam `safe-area-inset-left/right` e prévia visível da próxima foto no carrossel. Conferir também 600 × 390, o ponto mais estreito do layout horizontal em colunas.
+- A fotografia ampliada deve abrir no topo e manter o botão de fechar visível durante a rolagem dos créditos. Âncoras devem deixar o título abaixo do cabeçalho sem somar espaços excessivos da seção.

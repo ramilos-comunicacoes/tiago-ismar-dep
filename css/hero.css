@@ -1,0 +1,115 @@
+/* Opening portrait: a compact composition first, a two-column stage on wide screens. */
+.hero {
+  position:relative; isolation:isolate; overflow:clip; color:var(--paper);
+  background:#13231b; display:grid; grid-template-columns:minmax(0,1fr);
+  padding:calc(var(--header-height) + env(safe-area-inset-top) + 20px) var(--gutter) 22px;
+}
+.hero-atmosphere { position:absolute; inset:0; z-index:-1; pointer-events:none; background:radial-gradient(ellipse at 90% 50%,#536b393b,transparent 60%),linear-gradient(145deg,#1e3528,transparent 65%); }
+.hero-overline { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:10px; font-weight:600; letter-spacing:1.2px; line-height:1.5; color:#c8d1b9; }
+.hero-overline>span:first-child { display:flex; align-items:center; gap:8px; }
+.live-dot { width:6px; height:6px; display:inline-block; border-radius:50%; background:var(--lime); box-shadow:0 0 15px #d5eb6470; }
+.hero-intro { position:relative; z-index:3; margin-top:26px; }
+.hero-pretitle { font-size:16px; line-height:1.5; margin-bottom:12px; color:#e4e6d6; }
+.hero-pretitle em { color:var(--lime); font-style:normal; }
+.hero-title { display:flex; gap:.12em; font-family:var(--display); font-size:19.5vw; font-weight:600; line-height:.85; letter-spacing:-.025em; }
+.hero-title>span { display:block; white-space:nowrap; }
+.title-period { color:var(--lime); }
+.hero-description { display:none; }
+.hero-art { position:relative; isolation:isolate; height:clamp(350px,106vw,490px); margin:8px calc(var(--gutter) * -1) 0; overflow:clip; }
+.hero-landscape { position:absolute; z-index:0; inset:18% -10% 0 5%; overflow:hidden; border-radius:52% 46% 0 0; rotate:-9deg; background:#40593d; }
+.hero-landscape img { width:100%; height:100%; object-fit:cover; object-position:45% 50%; filter:brightness(.77) saturate(.85); scale:1.12; }
+.hero-arc { position:absolute; z-index:1; width:108%; height:70%; top:14%; left:-4%; border:1px solid #d5eb6460; border-radius:50%; rotate:-30deg; }
+.hero-contours { position:absolute; z-index:1; inset:-10% -16% auto; width:132%; height:112%; pointer-events:none; stroke:var(--lime); stroke-width:1; opacity:.55; }
+.hero-person { position:absolute; z-index:2; bottom:-24%; left:6%; width:88%; }
+.hero-person img { width:100%; height:auto; mask-image:url('../assets/tiago-cutout-mask.webp'); mask-mode:luminance; mask-size:100% 100%; mask-repeat:no-repeat; }
+.hero-place { position:absolute; z-index:3; left:5%; top:56%; color:var(--lime); rotate:-7deg; text-shadow:0 1px 14px #102016; }
+.hero-place>span { display:block; font-size:9px; font-weight:700; letter-spacing:2px; }
+.hero-place strong { display:block; font-family:var(--display); font-size:clamp(27px,8vw,38px); font-weight:600; line-height:1.1; }
+.hero-place svg { width:90px; margin-top:3px; stroke:currentColor; stroke-width:2; }
+.hero-art-fade { position:absolute; z-index:4; inset:72% 0 -1px; background:linear-gradient(transparent,#13231b 88%); pointer-events:none; }
+.hero-actions { position:relative; z-index:5; display:flex; flex-direction:column; gap:4px; margin-top:-5px; }
+.hero-cta { display:flex; justify-content:space-between; align-items:center; gap:16px; min-height:56px; padding:14px 20px; color:var(--forest); background:var(--lime); font-size:15px; font-weight:700; border-radius:3px; transition:background .25s,box-shadow .25s; }
+.hero-cta .icon { transition:transform .3s var(--ease); }
+.hero-cta:hover { background:#e6f68b; box-shadow:0 6px 24px #070e1233; }
+.hero-cta:hover .icon { transform:translateY(3px); }
+.hero-secondary { display:flex; align-items:center; justify-content:center; gap:12px; min-height:48px; font-size:15px; }
+.hero-secondary .icon { --icon-size:20px; transition:transform .3s; }
+.hero-secondary:hover .icon { transform:translate(3px,-3px); }
+.hero-baseline { display:none; }
+
+/* Entrance never hides the person or heading while the critical images load. */
+.is-loaded:not(.motion-paused) .hero-title>span { animation:hero-word-arrive .95s var(--ease) both; }
+.is-loaded:not(.motion-paused) .hero-title>span:last-child { animation-delay:.1s; }
+.is-loaded:not(.motion-paused) .hero-person { animation:hero-person-arrive 1.25s var(--ease) both; }
+.is-loaded:not(.motion-paused) .hero-contours path { animation:hero-contour-arrive 2.2s .2s var(--ease) both; }
+.is-loaded:not(.motion-paused) .hero-contours path:nth-child(2) { animation-delay:.35s; }
+.is-loaded:not(.motion-paused) .hero-contours path:nth-child(3) { animation-delay:.5s; }
+.hero-person { translate:0 calc(var(--scene-travel) * -14px); }
+.hero-landscape { translate:0 calc(var(--scene-travel) * 20px); }
+.hero-contours { translate:calc(var(--scene-travel) * 16px) 0; }
+.hero-place { translate:0 calc(var(--scene-travel) * -24px); }
+.hero.is-inview .hero-landscape img { animation:hero-landscape-drift 18s ease-in-out infinite alternate; }
+.hero:not(.is-inview) .hero-landscape img { animation-play-state:paused; }
+@keyframes hero-word-arrive { from { transform:translateY(28px); } to { transform:translateY(0); } }
+@keyframes hero-person-arrive { from { transform:translateY(32px) scale(.97); } to { transform:none; } }
+@keyframes hero-contour-arrive { from { stroke-dasharray:1; stroke-dashoffset:1; } to { stroke-dasharray:1; stroke-dashoffset:0; } }
+@keyframes hero-landscape-drift { from { transform:translateX(-1.5%); } to { transform:translateX(1.5%); } }
+
+@media (min-width:480px) and (max-width:1023px) {
+  .hero-intro { max-width:640px; width:100%; margin-inline:auto; }
+  .hero-title { font-size:clamp(94px,18vw,150px); }
+  .hero-art { width:min(100% + var(--gutter)*2,700px); justify-self:center; height:clamp(440px,95vw,560px); margin-top:12px; }
+  .hero-person { width:70%; left:17%; bottom:-25%; }
+  .hero-actions { width:100%; max-width:640px; margin-inline:auto; flex-direction:row; gap:24px; }
+  .hero-cta { flex:1; }
+  .hero-secondary { padding-inline:12px; }
+}
+@media (min-width:1024px) {
+  .hero { min-height:clamp(740px,100svh,1020px); grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto 1fr auto auto; column-gap:36px; padding-top:calc(var(--header-height) + 28px); padding-bottom:24px; }
+  .hero-overline { grid-column:1/-1; font-size:11px; letter-spacing:1.6px; }
+  .hero-overline>span:last-child { padding-right:8px; }
+  .hero-intro { grid-column:1; grid-row:2; align-self:center; margin-top:34px; padding-bottom:24px; }
+  .hero-pretitle { font-size:20px; margin-bottom:24px; }
+  .hero-title { flex-direction:column; gap:0; font-size:clamp(150px,min(17vw,25svh),305px); line-height:.82; letter-spacing:-.03em; }
+  .hero-title>span:last-child { color:var(--lime); }
+  .hero-description { display:block; margin-top:28px; font-size:19px; line-height:1.55; color:#c8d2bc; }
+  .hero-art { position:absolute; right:0; bottom:54px; top:130px; width:57%; height:auto; margin:0; z-index:1; }
+  .hero-landscape { inset:14% -9% -5% 8%; }
+  .hero-person { width:84%; max-width:740px; left:7%; top:-8%; bottom:auto; }
+  .hero-place { left:auto; right:8%; top:52%; }
+  .hero-place>span { font-size:11px; }
+  .hero-place strong { font-size:48px; }
+  .hero-place svg { width:135px; }
+  .hero-art-fade { inset:78% 0 -1px; }
+  .hero-actions { grid-column:1; grid-row:3; flex-direction:row; align-items:center; flex-wrap:wrap; gap:14px 24px; margin-top:0; padding-bottom:28px; }
+  .hero-cta { min-width:218px; }
+  .hero-secondary { padding-inline:4px; }
+  .hero-baseline { grid-column:1/-1; grid-row:4; position:relative; z-index:5; display:flex; align-items:center; gap:22px; padding-top:20px; border-top:1px solid #c9d6af38; color:#bbc8aa; font-size:10px; line-height:1.5; letter-spacing:1.6px; }
+  .hero-baseline-line { height:1px; width:52px; background:var(--lime); }
+  .hero-baseline>span:last-child { margin-left:auto; }
+}
+@media (min-width:1440px) {
+  .hero { padding-top:calc(var(--header-height) + 34px); }
+  .hero-intro { margin-top:44px; }
+  .hero-person { left:8%; }
+  .hero-place { right:10%; }
+  .hero-description { font-size:21px; margin-top:32px; }
+}
+/* Short landscape phones keep the portrait beside the content, with native page scroll. */
+@media (min-width:600px) and (max-width:1023px) and (max-height:600px) {
+  .hero { grid-template-columns:1fr 1fr; padding-top:calc(var(--header-height) + 20px); padding-bottom:24px; }
+  .hero-overline { grid-column:1/-1; }
+  .hero-intro { grid-column:1; grid-row:2; margin-top:30px; align-self:center; }
+  .hero-pretitle { font-size:16px; }
+  .hero-title { flex-direction:column; gap:2px; font-size:14vw; }
+  .hero-art { grid-column:2; grid-row:2/4; width:120%; height:400px; margin:0 -10% 0 0; }
+  .hero-person { width:84%; left:8%; top:-6%; bottom:auto; }
+  .hero-place { left:auto; right:6%; top:65%; }
+  .hero-actions { grid-column:1; grid-row:3; flex-direction:column; gap:0; align-self:start; margin-top:20px; }
+}
+.motion-paused .hero-person,.motion-paused .hero-landscape,.motion-paused .hero-contours,.motion-paused .hero-place { translate:none; }
+@media (prefers-reduced-motion:reduce) {
+  .hero *, .hero *::before, .hero *::after { animation:none!important; transition:none!important; }
+  .hero-person,.hero-landscape,.hero-contours,.hero-place { translate:none!important; }
+  .hero-title>span,.hero-person { transform:none!important; }
+}

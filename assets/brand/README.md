@@ -1,8 +1,8 @@
-# Tiago Ismar — T e serra em movimento
+# Tiago Ismar — Horizonte aberto · v4
 
-A letra **T** é a própria marca. Sua barra superior forma uma serra ondulante, desenhada em um único contorno fluido. A haste central mantém a leitura imediata da inicial, enquanto a linha da serra traz a referência ao território.
+A marca parte de um **T maiúsculo** de barra reta e haste vertical. Dentro da barra, um recorte transparente desenha a subida da encosta, um pequeno platô, o vale e um segundo relevo. A paisagem é uma interpretação abstrata da serra, sem representar um ponto geográfico específico.
 
-A solução tem poucos elementos, terminações suaves e não depende de detalhes pequenos. Foi conferida em 16 e 24 px, em uma cor e em fundo escuro.
+A letra mantém sua estrutura e a linha de serra tem curvas assimétricas. O símbolo utiliza dois contornos preenchidos, sem moldura, seta, escudo ou efeitos de volume. As versões clara e escura foram inspecionadas em 16, 24 e 32 px; a aplicação de 24 px ou mais preserva melhor a leitura do recorte.
 
 ## Entregáveis
 
@@ -12,7 +12,7 @@ A solução tem poucos elementos, terminações suaves e não depende de detalhe
 - `tiago-ismar-logo-light.svg` / `.png`: assinatura horizontal para fundos escuros.
 - `../personal-favicon.svg`: aplicação compacta para a aba do navegador.
 
-Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. O símbolo usa um único contorno vetorial. Os SVGs mantêm a tipografia em curvas e não carregam fontes, máscaras ou imagens externas.
+Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. O fundo e o recorte da serra são transparentes. Os SVGs mantêm a tipografia em curvas e não carregam fontes, máscaras ou imagens externas.
 
 ## Uso
 
@@ -20,7 +20,7 @@ Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. O 
 - Papel: `#eeeee5`
 - Lima: `#d5eb64`
 
-Preservar as proporções. Usar a assinatura horizontal a partir de 150 px de largura. O símbolo funciona a partir de 16 px; preferir 24 px ou mais quando houver espaço. Evitar contornos extras, sombras ou efeitos de volume. A marca funciona em impressão monocromática.
+Preservar as proporções. Usar a assinatura horizontal a partir de 150 px de largura. Preferir o símbolo com pelo menos 24 px, reservando 16 px para aplicações compactas como favicon. Evitar contornos extras, sombras ou efeitos de volume. A marca também pode ser aplicada em uma única tinta.
 
 A assinatura mantém o viewBox `0 0 588 124` e o símbolo mantém `0 0 120 120` para preservar a integração existente.
 

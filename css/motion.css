@@ -4,55 +4,6 @@
   --scene-travel: 0;
 }
 
-.hero-route {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  pointer-events: none;
-  fill: none;
-  transform: translate3d(calc(var(--scene-travel) * 10px), 0, 0);
-}
-.route-ghost {
-  stroke: #eeeee530;
-  stroke-width: 1;
-  stroke-dasharray: 3 9;
-}
-.route-ink {
-  stroke: #d5eb6475;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-}
-.js-ready .route-ink {
-  stroke-dashoffset: 1;
-}
-.is-loaded .route-ink {
-  animation: trace-the-serra 2.8s .3s cubic-bezier(.19, 1, .22, 1) forwards;
-}
-.hero-title > span:first-child {
-  translate: calc(var(--scene-travel) * -16px) 0;
-}
-.hero-title > span:last-child {
-  translate: calc(var(--scene-travel) * 14px) 0;
-}
-.hero-portrait-stamp {
-  translate: 0 calc(var(--scene-travel) * -20px);
-  transform-origin: 50% 80%;
-  transition: rotate .45s cubic-bezier(.22, 1, .36, 1);
-}
-.hero-portrait-stamp:active {
-  rotate: -3deg;
-}
-.hero-portrait-stamp > span > span {
-  display: inline-block;
-  transition: transform .35s;
-}
-.hero-portrait-stamp:hover > span > span {
-  transform: translate(2px, -2px);
-}
 .portrait-window {
   isolation: isolate;
 }
@@ -179,7 +130,6 @@
 .main-nav a {
   transition: color .2s, transform .5s cubic-bezier(.22, 1, .36, 1), opacity .4s;
 }
-.js-ready [data-scroll-scene]:not(.is-inview) .hero-landscape img,
 .js-ready [data-scroll-scene]:not(.is-inview) .mist,
 .js-ready [data-scroll-scene]:not(.is-inview) .ticker-track {
   animation-play-state: paused;
@@ -194,19 +144,13 @@
   .main-nav.is-open a:nth-child(4) { transition-delay: .18s; }
 }
 @media (min-width: 768px) {
-  .hero-title > span:first-child { translate: calc(var(--scene-travel) * -24px) 0; }
-  .hero-title > span:last-child { translate: calc(var(--scene-travel) * 24px) 0; }
   .conversation-orbit { right: -28px; }
 }
-@keyframes trace-the-serra { to { stroke-dashoffset: 0; } }
 @keyframes contour-current { to { stroke-dashoffset: -390; } }
 @keyframes conversation-turn { to { transform: rotate(360deg); } }
 
 /* Every effect has a complete, readable static composition. */
-.motion-paused .route-ink { stroke-dashoffset: 0; animation: none; }
 .motion-paused .portrait-window::before { transform: scaleY(0); }
-.motion-paused .hero-title > span,
-.motion-paused .hero-portrait-stamp,
 .motion-paused .cinema-title > span,
 .motion-paused .contact-portrait,
 .motion-paused .orbit-arrow { translate: none; }
@@ -218,9 +162,6 @@
     transition: none !important;
     scroll-behavior: auto !important;
   }
-  .route-ink { stroke-dashoffset: 0 !important; }
-  .hero-title > span,
-  .hero-portrait-stamp,
   .cinema-title > span,
   .contact-portrait,
   .orbit-arrow { translate: none !important; }

@@ -1,31 +1,37 @@
-# Tiago Ismar — Serra e caminho
+# Tiago Ismar — Curvas de nível
 
-Uma chapada de topo horizontal representa a Serra da Ibiapaba. O recorte transparente desenha um caminho que atravessa a marca. Dois patamares no contorno sugerem a escarpa, com uma silhueta simples que continua legível em tamanhos pequenos.
+O monograma reúne as iniciais **T** e **I** em uma construção própria. Três faixas horizontais se curvam e seguem pela haste do T, como curvas de nível. O corte ascendente no I continua esse movimento.
 
-A assinatura usa letras condensadas e firmes, alinhadas à direção editorial do site. A tipografia foi convertida em curvas: os SVGs entregues não carregam fontes ou recursos externos.
+A referência à Ibiapaba está na topografia que constrói as letras. O símbolo não depende de uma ilustração de montanha e permanece legível em uma cor, inclusive em aplicação pequena ou sobre tecido.
 
-## Arquivos
+## Entregáveis
 
-- `tiago-ismar-symbol.svg`: símbolo monocromático verde floresta, fundo transparente.
-- `tiago-ismar-symbol-lime.svg`: símbolo monocromático lima, fundo transparente.
-- `tiago-ismar-logo-forest.svg`: assinatura horizontal monocromática para fundos claros.
-- `tiago-ismar-logo-light.svg`: símbolo lima e assinatura clara para fundos escuros.
-- `../personal-favicon.svg`: aplicação compacta do símbolo para a aba do navegador.
+- `tiago-ismar-symbol.svg` / `.png`: símbolo floresta, fundo transparente.
+- `tiago-ismar-symbol-lime.svg` / `.png`: símbolo lima, fundo transparente.
+- `tiago-ismar-logo-forest.svg` / `.png`: assinatura horizontal para fundos claros.
+- `tiago-ismar-logo-light.svg` / `.png`: assinatura horizontal para fundos escuros.
+- `../personal-favicon.svg`: aplicação compacta para a aba do navegador.
 
-## Cores
+Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. Os SVGs são inteiramente vetoriais: tipografia em curvas, vazados transparentes e nenhuma fonte, máscara ou imagem externa.
+
+## Uso
 
 - Floresta: `#13231b`
 - Papel: `#eeeee5`
 - Lima: `#d5eb64`
 
-Preservar as proporções, sem contorno adicional, sombras ou efeitos de volume. Usar a assinatura horizontal a partir de 150 px de largura e o símbolo isolado a partir de 24 px. Deixar uma margem livre mínima equivalente à largura do caminho na base.
+Preservar as proporções. Usar a assinatura horizontal a partir de 150 px de largura e o símbolo a partir de 32 px. Evitar contornos extras, sombras ou efeitos de volume. A marca funciona em impressão monocromática.
 
-## Fonte vetorial e reconstrução
+## Reconstrução
 
-`wordmark-outlines.json` preserva as curvas da assinatura, derivadas da fonte local Bahnschrift SemiBold SemiConden. Não distribui o arquivo da fonte. `build-brand.mjs` reconstrói os SVGs e o favicon usando apenas Node.js:
+`wordmark-outlines.json` preserva as curvas da assinatura condensada. Não redistribui arquivos de fonte. Para reconstruir os SVGs e o favicon, basta Node.js:
 
 ```sh
 node assets/brand/build-brand.mjs
 ```
 
-Não é necessário instalar pacotes ou fontes para reconstruir os entregáveis.
+Para reconstruir também os PNGs transparentes, informar o diretório de pacotes do runtime que contém `sharp`:
+
+```powershell
+node assets/brand/build-brand.mjs --sharp-root 'C:/Users/const/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'
+```

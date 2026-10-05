@@ -1,0 +1,227 @@
+/* Motion follows the landscape and the reader. Scrolling stays native. */
+[data-scroll-scene] {
+  --scene-progress: .5;
+  --scene-travel: 0;
+}
+
+.hero-route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  fill: none;
+  transform: translate3d(calc(var(--scene-travel) * 10px), 0, 0);
+}
+.route-ghost {
+  stroke: #eeeee530;
+  stroke-width: 1;
+  stroke-dasharray: 3 9;
+}
+.route-ink {
+  stroke: #d5eb6475;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.js-ready .route-ink {
+  stroke-dashoffset: 1;
+}
+.is-loaded .route-ink {
+  animation: trace-the-serra 2.8s .3s cubic-bezier(.19, 1, .22, 1) forwards;
+}
+.hero-title > span:first-child {
+  translate: calc(var(--scene-travel) * -16px) 0;
+}
+.hero-title > span:last-child {
+  translate: calc(var(--scene-travel) * 14px) 0;
+}
+.hero-portrait-stamp {
+  translate: 0 calc(var(--scene-travel) * -20px);
+  transform-origin: 50% 80%;
+  transition: rotate .45s cubic-bezier(.22, 1, .36, 1);
+}
+.hero-portrait-stamp:active {
+  rotate: -3deg;
+}
+.hero-portrait-stamp > span > span {
+  display: inline-block;
+  transition: transform .35s;
+}
+.hero-portrait-stamp:hover > span > span {
+  transform: translate(2px, -2px);
+}
+.portrait-window {
+  isolation: isolate;
+}
+.portrait-window::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--forest);
+  z-index: 3;
+  pointer-events: none;
+  transform: scaleY(0);
+  transform-origin: top;
+}
+.js-ready .portrait-figure:not(.is-visible) .portrait-window::before {
+  transform: scaleY(1);
+}
+.js-ready .portrait-figure.is-visible .portrait-window::before {
+  transition: transform 1.2s cubic-bezier(.76, 0, .24, 1);
+}
+.portrait-window img {
+  scale: calc(1.025 + var(--scene-progress) * .035);
+}
+.photo-corner {
+  transition: width 1.2s .35s, height 1.2s .35s;
+}
+.js-ready .portrait-figure:not(.is-visible) .photo-corner {
+  width: 0;
+  height: 0;
+}
+
+.topographic-lines {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  pointer-events: none;
+  stroke: #d5eb6460;
+  stroke-width: 1;
+  transform: translate3d(calc(var(--scene-travel) * -25px), 0, 0);
+}
+.topographic-lines path {
+  stroke-dasharray: 130 25 15 25;
+  animation: contour-current 25s linear infinite;
+  animation-play-state: paused;
+}
+.is-inview .topographic-lines path {
+  animation-play-state: running;
+}
+.topographic-lines path:nth-child(even) {
+  animation-direction: reverse;
+  opacity: .55;
+}
+.cinema-title > span {
+  display: block;
+}
+.cinema-title .serra-word {
+  color: var(--paper);
+  -webkit-text-stroke: 0;
+  translate: calc(var(--scene-travel) * -12px) 0;
+}
+.cinema-title .viva-word {
+  translate: calc(var(--scene-travel) * 20px) 0;
+}
+.cinema-photo img {
+  scale: calc(1.03 + var(--scene-progress) * .08);
+}
+.cinema-aside .contour path {
+  stroke-dasharray: 360;
+  stroke-dashoffset: calc(100 - var(--scene-progress) * 100);
+}
+.landscape-card > button {
+  transition: clip-path .6s cubic-bezier(.22, 1, .36, 1);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+.landscape-card.is-current > button {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+.landscape-card.is-current .photo-index {
+  color: var(--lime);
+}
+.landscape-card.is-current .photo-open {
+  background: var(--lime);
+}
+.conversation-orbit {
+  position: absolute;
+  width: clamp(100px, 29vw, 150px);
+  height: auto;
+  right: -16px;
+  top: -48px;
+  z-index: 3;
+  color: var(--forest);
+  overflow: visible;
+  rotate: -3deg;
+}
+.conversation-orbit circle {
+  fill: var(--lime);
+}
+.conversation-orbit text {
+  font-family: var(--body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  fill: currentColor;
+  transform-origin: 80px 80px;
+  animation: conversation-turn 32s linear infinite;
+  animation-play-state: paused;
+}
+.is-inview .conversation-orbit text {
+  animation-play-state: running;
+}
+.orbit-arrow {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: square;
+  translate: calc(var(--scene-travel) * 5px) calc(var(--scene-travel) * -5px);
+}
+.contact-portrait {
+  translate: 0 calc(var(--scene-travel) * -14px);
+}
+.main-nav a {
+  transition: color .2s, transform .5s cubic-bezier(.22, 1, .36, 1), opacity .4s;
+}
+.js-ready [data-scroll-scene]:not(.is-inview) .hero-landscape img,
+.js-ready [data-scroll-scene]:not(.is-inview) .mist,
+.js-ready [data-scroll-scene]:not(.is-inview) .ticker-track {
+  animation-play-state: paused;
+}
+@media (max-width: 1023px) {
+  .main-nav:not(.is-open) a {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  .main-nav.is-open a:nth-child(2) { transition-delay: .06s; }
+  .main-nav.is-open a:nth-child(3) { transition-delay: .12s; }
+  .main-nav.is-open a:nth-child(4) { transition-delay: .18s; }
+}
+@media (min-width: 768px) {
+  .hero-title > span:first-child { translate: calc(var(--scene-travel) * -24px) 0; }
+  .hero-title > span:last-child { translate: calc(var(--scene-travel) * 24px) 0; }
+  .conversation-orbit { right: -28px; }
+}
+@keyframes trace-the-serra { to { stroke-dashoffset: 0; } }
+@keyframes contour-current { to { stroke-dashoffset: -390; } }
+@keyframes conversation-turn { to { transform: rotate(360deg); } }
+
+/* Every effect has a complete, readable static composition. */
+.motion-paused .route-ink { stroke-dashoffset: 0; animation: none; }
+.motion-paused .portrait-window::before { transform: scaleY(0); }
+.motion-paused .hero-title > span,
+.motion-paused .hero-portrait-stamp,
+.motion-paused .cinema-title > span,
+.motion-paused .contact-portrait,
+.motion-paused .orbit-arrow { translate: none; }
+.motion-paused .cinema-photo img,
+.motion-paused .portrait-window img { scale: 1; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .route-ink { stroke-dashoffset: 0 !important; }
+  .hero-title > span,
+  .hero-portrait-stamp,
+  .cinema-title > span,
+  .contact-portrait,
+  .orbit-arrow { translate: none !important; }
+  .portrait-window::before { transform: scaleY(0) !important; }
+}

@@ -41,6 +41,7 @@ def static_file(path):
         or (path.parts[0] == "css" and path.suffix.lower() == ".css")
         or (path.parts[0] == "js" and path.suffix.lower() == ".js")
         or (path.parts[0] == "assets" and path.suffix.lower() in ASSET_TYPES)
+        or path in {PurePosixPath("assets/fonts/OFL-Barlow.txt"), PurePosixPath("assets/fonts/OFL-Manrope.txt")}
     )
 
 

@@ -1,8 +1,8 @@
-# Tiago Ismar — Curvas de nível
+# Tiago Ismar — T e serra em movimento
 
-O monograma reúne as iniciais **T** e **I** em uma construção própria. Três faixas horizontais se curvam e seguem pela haste do T, como curvas de nível. O corte ascendente no I continua esse movimento.
+A letra **T** é a própria marca. Sua barra superior forma uma serra ondulante, desenhada em um único contorno fluido. A haste central mantém a leitura imediata da inicial, enquanto a linha da serra traz a referência ao território.
 
-A referência à Ibiapaba está na topografia que constrói as letras. O símbolo não depende de uma ilustração de montanha e permanece legível em uma cor, inclusive em aplicação pequena ou sobre tecido.
+A solução tem poucos elementos, terminações suaves e não depende de detalhes pequenos. Foi conferida em 16 e 24 px, em uma cor e em fundo escuro.
 
 ## Entregáveis
 
@@ -12,7 +12,7 @@ A referência à Ibiapaba está na topografia que constrói as letras. O símbol
 - `tiago-ismar-logo-light.svg` / `.png`: assinatura horizontal para fundos escuros.
 - `../personal-favicon.svg`: aplicação compacta para a aba do navegador.
 
-Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. Os SVGs são inteiramente vetoriais: tipografia em curvas, vazados transparentes e nenhuma fonte, máscara ou imagem externa.
+Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. O símbolo usa um único contorno vetorial. Os SVGs mantêm a tipografia em curvas e não carregam fontes, máscaras ou imagens externas.
 
 ## Uso
 
@@ -20,7 +20,9 @@ Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. Os
 - Papel: `#eeeee5`
 - Lima: `#d5eb64`
 
-Preservar as proporções. Usar a assinatura horizontal a partir de 150 px de largura e o símbolo a partir de 32 px. Evitar contornos extras, sombras ou efeitos de volume. A marca funciona em impressão monocromática.
+Preservar as proporções. Usar a assinatura horizontal a partir de 150 px de largura. O símbolo funciona a partir de 16 px; preferir 24 px ou mais quando houver espaço. Evitar contornos extras, sombras ou efeitos de volume. A marca funciona em impressão monocromática.
+
+A assinatura mantém o viewBox `0 0 588 124` e o símbolo mantém `0 0 120 120` para preservar a integração existente.
 
 ## Reconstrução
 

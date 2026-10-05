@@ -165,6 +165,7 @@
         if (!element.classList.contains('is-visible')) revealObserver?.observe(element);
       });
     }
+    syncGalleryPlayback();
     requestFrame();
   }
 
@@ -174,79 +175,323 @@
 
   const track = document.querySelector('.landscape-track');
   const cards = track ? [...track.querySelectorAll('.landscape-card')] : [];
+  const galleryRegion = track?.closest('.gallery-section') || track;
   const previousButton = document.querySelector('[data-gallery-prev]');
   const nextButton = document.querySelector('[data-gallery-next]');
   const currentIndicator = document.querySelector('[data-gallery-current]');
   const totalIndicator = document.querySelector('[data-gallery-total]');
   const formatIndex = (value) => String(value).padStart(2, '0');
+  const galleryInterval = 4200;
+  const interactionDelay = 6000;
+  const cloneCards = [];
   let activeGalleryIndex = -1;
+  let galleryVisible = false;
+  let galleryHovered = false;
+  let galleryInputMode = 'pointer';
+  let galleryWindowFocused = true;
+  let galleryPointerActive = false;
+  let galleryTransitioning = false;
+  let galleryResumeAt = 0;
+  let galleryAutoTimer;
+  let gallerySettleTimer;
+  let pendingGalleryMove = null;
+  let galleryWidth = track?.clientWidth || 0;
+  let cachedGalleryWidth = -1;
+  let cachedGalleryPositions = [];
 
   if (totalIndicator) totalIndicator.textContent = formatIndex(cards.length);
 
+  // A second identical sequence provides a forward wrap without an animated rewind.
+  // Its images reuse the same lazy-loaded URLs; only the originals enter the tab order.
+  if (track && cards.length > 1) {
+    const fragment = document.createDocumentFragment();
+    cards.forEach((card, index) => {
+      const clone = card.cloneNode(true);
+      clone.classList.add('is-clone');
+      clone.classList.remove('is-current');
+      clone.setAttribute('aria-hidden', 'true');
+      clone.setAttribute('data-active', 'false');
+      clone.removeAttribute('id');
+      clone.querySelectorAll('[id]').forEach((element) => element.removeAttribute('id'));
+      clone.querySelectorAll('[data-photo]').forEach((element) => element.removeAttribute('data-photo'));
+      clone.querySelectorAll('a, button, input, select, textarea, [tabindex]').forEach((element) => {
+        element.setAttribute('tabindex', '-1');
+      });
+      clone.querySelectorAll('img').forEach((image) => { image.loading = 'lazy'; });
+      const cloneButton = clone.querySelector('button');
+      // A pointer can open a visible duplicate, but focus and dialog ownership stay on the original.
+      cloneButton?.addEventListener('pointerdown', (event) => event.preventDefault());
+      cloneButton?.addEventListener('click', (event) => {
+        event.preventDefault();
+        rememberGalleryInteraction();
+        normalizeGallery();
+        cards[index].querySelector('[data-photo]')?.click();
+      });
+      cloneCards.push(clone);
+      fragment.append(clone);
+    });
+    track.append(fragment);
+  }
+  const renderedCards = [...cards, ...cloneCards];
+
   function cardPositions() {
     if (!track || !cards.length) return [];
-    const firstLeft = cards[0].offsetLeft;
-    return cards.map((card) => card.offsetLeft - firstLeft);
+    if (cachedGalleryWidth !== track.clientWidth) {
+      cachedGalleryWidth = track.clientWidth;
+      const firstLeft = cards[0].offsetLeft;
+      cachedGalleryPositions = renderedCards.map((card) => card.offsetLeft - firstLeft);
+    }
+    return cachedGalleryPositions;
   }
 
-  function galleryIndex(scrollLeft, maximumScroll, positions) {
+  function galleryIndex(scrollLeft, positions) {
+    const span = positions[cards.length] || 0;
+    const logicalPosition = span ? ((scrollLeft % span) + span) % span : scrollLeft;
     let closestIndex = 0;
-    positions.forEach((position, index) => {
-      if (Math.abs(position - scrollLeft) < Math.abs(positions[closestIndex] - scrollLeft)) {
+    let distance = span ? Math.min(logicalPosition, span - logicalPosition) : Math.abs(logicalPosition);
+    positions.slice(0, cards.length).forEach((position, index) => {
+      const candidateDistance = Math.abs(position - logicalPosition);
+      if (candidateDistance < distance) {
         closestIndex = index;
+        distance = candidateDistance;
       }
     });
-    // A final card may stop before its left edge reaches the viewport edge.
-    if (maximumScroll > 2 && scrollLeft >= maximumScroll - 2) closestIndex = cards.length - 1;
     return closestIndex;
+  }
+
+  function normalizeGallery() {
+    if (!track) return 0;
+    let position = track.scrollLeft;
+    if (!cloneCards.length) return position;
+    const span = cardPositions()[cards.length];
+    if (span && position >= span - 1) {
+      position = Math.max(0, position - span);
+      track.scrollTo({ left: position, behavior: 'instant' });
+    }
+    return position;
+  }
+
+  function clearGalleryAutoTimer() {
+    window.clearTimeout(galleryAutoTimer);
+    galleryAutoTimer = undefined;
+  }
+
+  function clearGallerySettleTimer() {
+    window.clearTimeout(gallerySettleTimer);
+    gallerySettleTimer = undefined;
+  }
+
+  function hasGalleryKeyboardFocus() {
+    const focused = document.activeElement;
+    return galleryInputMode === 'keyboard' && focused instanceof Element
+      && focused !== galleryRegion && Boolean(galleryRegion?.contains(focused))
+      && focused.matches('a[href], button, input, select, textarea, [tabindex]');
+  }
+
+  function canGalleryPlay() {
+    return cards.length > 1 && galleryVisible && !document.hidden && galleryWindowFocused && !motionPaused
+      && !galleryHovered && !hasGalleryKeyboardFocus() && !galleryPointerActive && !photoDialog?.open;
+  }
+
+  function syncGalleryPlayback() {
+    clearGalleryAutoTimer();
+    if (!canGalleryPlay()) {
+      if (!galleryVisible || document.hidden || motionPaused) {
+        clearGallerySettleTimer();
+        if (galleryTransitioning && track) {
+          track.scrollTo({ left: track.scrollLeft, behavior: 'instant' });
+          galleryTransitioning = false;
+        }
+        normalizeGallery();
+      }
+      return;
+    }
+    if (galleryTransitioning) return;
+    const delay = Math.max(galleryInterval, galleryResumeAt - Date.now());
+    galleryAutoTimer = window.setTimeout(() => {
+      galleryAutoTimer = undefined;
+      if (canGalleryPlay()) moveGallery(1, { automatic: true });
+    }, delay);
+  }
+
+  function rememberGalleryInteraction() {
+    galleryResumeAt = Date.now() + interactionDelay;
+    syncGalleryPlayback();
+  }
+
+  function finishGalleryMotion() {
+    clearGallerySettleTimer();
+    if (galleryPointerActive || pendingGalleryMove) return;
+    galleryTransitioning = false;
+    normalizeGallery();
+    requestFrame();
+    syncGalleryPlayback();
+  }
+
+  function scheduleGallerySettle() {
+    clearGallerySettleTimer();
+    if (!galleryVisible || document.hidden) return;
+    gallerySettleTimer = window.setTimeout(finishGalleryMotion, 180);
+  }
+
+  function setGalleryVisibility(visible) {
+    if (galleryVisible === visible) return;
+    galleryVisible = visible;
+    syncGalleryPlayback();
   }
 
   function updateGallery() {
     if (!track || !cards.length) return;
-    const maximumScroll = Math.max(0, track.scrollWidth - track.clientWidth);
-    const closestIndex = galleryIndex(track.scrollLeft, maximumScroll, cardPositions());
+    if (!('IntersectionObserver' in window)) {
+      const bounds = track.getBoundingClientRect();
+      setGalleryVisibility(bounds.bottom > 0 && bounds.top < window.innerHeight);
+    }
+    const positions = cardPositions();
+    if (Math.abs(track.clientWidth - galleryWidth) > 1) {
+      galleryWidth = track.clientWidth;
+      clearGallerySettleTimer();
+      galleryTransitioning = false;
+      track.scrollTo({ left: positions[Math.max(0, activeGalleryIndex)], behavior: 'instant' });
+      syncGalleryPlayback();
+    }
+    const closestIndex = galleryIndex(track.scrollLeft, positions);
     if (closestIndex !== activeGalleryIndex) {
-      cards.forEach((card, index) => {
-        const isCurrent = index === closestIndex;
+      renderedCards.forEach((card, index) => {
+        const isCurrent = index % cards.length === closestIndex;
         card.classList.toggle('is-current', isCurrent);
         card.setAttribute('data-active', String(isCurrent));
       });
       if (currentIndicator) currentIndicator.textContent = formatIndex(closestIndex + 1);
       activeGalleryIndex = closestIndex;
     }
-    if (previousButton) previousButton.disabled = track.scrollLeft <= 2;
-    if (nextButton) nextButton.disabled = track.scrollLeft >= maximumScroll - 2;
+    if (previousButton) previousButton.disabled = cards.length < 2;
+    if (nextButton) nextButton.disabled = cards.length < 2;
   }
 
-  function moveGallery(direction, { focusCard = false } = {}) {
-    if (!track || !cards.length) return;
+  function moveGallery(direction, { focusCard = false, automatic = false } = {}) {
+    if (!track || cards.length < 2) return;
+    if (!automatic) rememberGalleryInteraction();
+    clearGalleryAutoTimer();
+    clearGallerySettleTimer();
+    pendingGalleryMove = null;
+    const beforeNormalization = track.scrollLeft;
+    let origin = normalizeGallery();
+    let jumped = Math.abs(origin - beforeNormalization) > 1;
     const positions = cardPositions();
+    const span = positions[cards.length];
+    if (direction < 0 && origin <= 2 && span) {
+      origin = span;
+      jumped = true;
+      track.scrollTo({ left: origin, behavior: 'instant' });
+    }
     const maximumScroll = Math.max(0, track.scrollWidth - track.clientWidth);
     const nextPosition = direction > 0
-      ? positions.find((position) => position > track.scrollLeft + 4)
-      : [...positions].reverse().find((position) => position < track.scrollLeft - 4);
+      ? positions.find((position) => position > origin + 4)
+      : [...positions].reverse().find((position) => position < origin - 4);
     const destination = Math.max(0, Math.min(nextPosition ?? (direction > 0 ? maximumScroll : 0), maximumScroll));
 
-    if (focusCard) {
-      const index = galleryIndex(destination, maximumScroll, positions);
-      cards[index]?.querySelector('button')?.focus({ preventScroll: true });
+    const performMove = () => {
+      if (focusCard) {
+        const index = galleryIndex(destination, positions);
+        cards[index]?.querySelector('button')?.focus({ preventScroll: true });
+      }
+      galleryTransitioning = !motionPaused;
+      track.scrollTo({
+        left: destination,
+        behavior: motionPaused ? 'instant' : 'smooth',
+      });
+      if (motionPaused) finishGalleryMotion();
+      else scheduleGallerySettle();
+    };
+    if (jumped) {
+      // Let the instant jump settle before starting a smooth move from its new origin.
+      galleryTransitioning = true;
+      pendingGalleryMove = performMove;
+    } else {
+      performMove();
     }
-    track.scrollTo({
-      left: destination,
-      behavior: motionPaused ? 'instant' : 'smooth',
-    });
     requestFrame();
   }
 
   previousButton?.addEventListener('click', () => moveGallery(-1));
   nextButton?.addEventListener('click', () => moveGallery(1));
-  track?.addEventListener('scroll', requestFrame, { passive: true });
+  track?.addEventListener('scroll', () => {
+    requestFrame();
+    if (galleryVisible && !document.hidden) {
+      galleryTransitioning = true;
+      clearGalleryAutoTimer();
+      scheduleGallerySettle();
+    }
+  }, { passive: true });
+  // Debounce actual scroll activity instead of scrollend: an instant seam jump can
+  // dispatch a delayed scrollend while the following smooth move is already starting.
   track?.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
     moveGallery(event.key === 'ArrowRight' ? 1 : -1, { focusCard: event.target !== track });
   });
+  track?.addEventListener('pointerenter', (event) => {
+    if (event.pointerType !== 'mouse') return;
+    galleryHovered = true;
+    syncGalleryPlayback();
+  });
+  track?.addEventListener('pointerleave', (event) => {
+    if (event.pointerType !== 'mouse') return;
+    galleryHovered = false;
+    rememberGalleryInteraction();
+  });
+  galleryRegion?.addEventListener('pointerdown', () => {
+    galleryPointerActive = true;
+    rememberGalleryInteraction();
+  }, { passive: true });
+  const releaseGalleryPointer = () => {
+    if (!galleryPointerActive) return;
+    galleryPointerActive = false;
+    rememberGalleryInteraction();
+    scheduleGallerySettle();
+  };
+  window.addEventListener('pointerup', releaseGalleryPointer, { passive: true });
+  window.addEventListener('pointercancel', releaseGalleryPointer, { passive: true });
+  // Browser focus can remain on a touched button. Only keyboard focus holds playback.
+  document.addEventListener('keydown', (event) => {
+    if (['Alt', 'Control', 'Meta', 'Shift'].includes(event.key)) return;
+    galleryInputMode = 'keyboard';
+    if (hasGalleryKeyboardFocus()) syncGalleryPlayback();
+  });
+  document.addEventListener('pointerdown', () => {
+    const wasKeyboardFocused = hasGalleryKeyboardFocus();
+    galleryInputMode = 'pointer';
+    if (wasKeyboardFocused) rememberGalleryInteraction();
+  }, { capture: true, passive: true });
+  galleryRegion?.addEventListener('focusin', syncGalleryPlayback);
+  galleryRegion?.addEventListener('focusout', () => {
+    window.queueMicrotask(() => {
+      rememberGalleryInteraction();
+    });
+  });
+  track?.addEventListener('wheel', rememberGalleryInteraction, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) galleryPointerActive = false;
+    galleryHovered = !document.hidden && window.matchMedia('(hover: hover)').matches
+      && Boolean(track?.matches(':hover'));
+    syncGalleryPlayback();
+  });
+  window.addEventListener('blur', () => {
+    galleryWindowFocused = false;
+    galleryPointerActive = false;
+    clearGalleryAutoTimer();
+  });
+  window.addEventListener('focus', () => {
+    galleryWindowFocused = true;
+    rememberGalleryInteraction();
+  });
+  if (track && 'IntersectionObserver' in window) {
+    const galleryObserver = new IntersectionObserver((entries) => {
+      setGalleryVisibility(entries[0].isIntersecting && entries[0].intersectionRatio >= 0.15);
+    }, { threshold: [0, 0.15] });
+    galleryObserver.observe(track);
+  }
 
   // Native dialog supplies keyboard focus containment and Escape dismissal.
   const photoDialog = document.querySelector('#photo-dialog');
@@ -270,6 +515,7 @@
         if (!photoDialog.open) photoDialog.showModal();
         body.classList.add('photo-open');
         dialogClose?.focus({ preventScroll: true });
+        syncGalleryPlayback();
       });
     });
 
@@ -285,6 +531,7 @@
       body.classList.remove('photo-open');
       if (photoTrigger?.isConnected) photoTrigger.focus({ preventScroll: true });
       photoTrigger = null;
+      rememberGalleryInteraction();
     });
   }
 
@@ -297,6 +544,11 @@
 
   function updateFrame() {
     framePending = false;
+    if (pendingGalleryMove) {
+      const performMove = pendingGalleryMove;
+      pendingGalleryMove = null;
+      performMove();
+    }
     const scrollTop = Math.max(0, window.scrollY);
     const scrollRange = Math.max(0, root.scrollHeight - window.innerHeight);
     root.style.setProperty('--scroll-progress', String(scrollRange ? Math.min(1, scrollTop / scrollRange) : 0));

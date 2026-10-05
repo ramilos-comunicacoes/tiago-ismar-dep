@@ -1,0 +1,8 @@
+{
+  "source": "tiago-real-contato.webp; original LIC04470.JPG supplied by owner",
+  "method": "Original photograph displayed through a luminance mask generated with built-in image_gen; CSS composition only. Generated portrait was rejected and is not published.",
+  "mask": "tiago-cutout-mask.webp",
+  "prompt": "Create ONLY a precise black-and-white alpha segmentation mask for the attached source photograph. Exact original framing, solid white person silhouette, solid black background. Do not zoom, move or reframe.",
+  "faceRetouching": false,
+  "faceGeneration": false
+}

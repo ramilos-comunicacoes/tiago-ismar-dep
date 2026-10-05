@@ -132,12 +132,12 @@
 .landscape-card.is-current > button {
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
 }
-.landscape-card.is-current .photo-index {
-  color: var(--lime);
-}
 .landscape-card.is-current .photo-open {
   background: var(--lime);
 }
+/* Photos licensed without derivatives stay complete, including during hover. */
+.landscape-card[data-full-image] > button { clip-path:none; }
+.landscape-card[data-full-image] img { object-fit:contain; transform:none!important; filter:none!important; }
 .conversation-orbit {
   position: absolute;
   width: clamp(100px, 29vw, 150px);
@@ -169,7 +169,8 @@
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
-  stroke-linecap: square;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   translate: calc(var(--scene-travel) * 5px) calc(var(--scene-travel) * -5px);
 }
 .contact-portrait {
@@ -225,3 +226,9 @@
   .orbit-arrow { translate: none !important; }
   .portrait-window::before { transform: scaleY(0) !important; }
 }
+
+.collage-sun { translate:0 calc(var(--scene-travel) * -16px); }
+.collage-contours { translate:calc(var(--scene-travel) * 20px) 0; }
+.tiago-cutout { translate:0 calc(var(--scene-travel) * -8px); }
+.motion-paused .collage-sun,.motion-paused .collage-contours,.motion-paused .tiago-cutout { translate:none; }
+@media (prefers-reduced-motion:reduce) { .collage-sun,.collage-contours,.tiago-cutout { translate:none!important; } }

@@ -15,3 +15,6 @@
 - Animações devem acompanhar a rolagem nativa, funcionar por toque e respeitar `prefers-reduced-motion`. Não recolocar botão para pausar animações: o usuário pediu sua remoção.
 - Manter fotos reais fornecidas pelo usuário. Não substituir o rosto por retratos gerados.
 - Ocultar visualmente as barras de rolagem, preservando rolagem nativa por toque, mouse e teclado. Não usar `overflow:hidden` na página para esconder a barra.
+- Usar os ícones SVG oficiais do Lucide em `assets/icons/lucide.svg` para setas e controles; nunca substituir ícones por caracteres Unicode ou emojis. Preservar rótulos acessíveis nos controles.
+- Manter o menu e as seções sem numeração decorativa. Evitar legendas e textos redundantes.
+- A galeria deve avançar automaticamente em ciclo infinito, respeitando movimento reduzido e a interação do visitante. Cada cidade precisa de fotografia real, com identificação, fonte e crédito verificáveis.

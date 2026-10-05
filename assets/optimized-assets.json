@@ -1,0 +1,100 @@
+{
+  "generator": "scripts/optimize-assets.mjs",
+  "sharpVersion": "0.35.4",
+  "originalFilesPreserved": true,
+  "assets": [
+    {
+      "original": "serra-panorama.jpg",
+      "originalBytes": 2191636,
+      "originalRawWidth": 2062,
+      "originalRawHeight": 7761,
+      "originalExifOrientation": 8,
+      "author": "Marcos de Souza Faria",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parque_Nacional_de_Ubajara_-_Bicas.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "derivatives": [
+        {
+          "file": "serra-panorama.webp",
+          "variant": "desktop",
+          "width": 2560,
+          "height": 680,
+          "bytes": 217262,
+          "quality": 82,
+          "changes": "EXIF auto-orientation, proportional resize and WebP encoding. No content retouching."
+        },
+        {
+          "file": "serra-panorama-mobile.webp",
+          "variant": "mobile",
+          "width": 960,
+          "height": 255,
+          "bytes": 35028,
+          "quality": 82,
+          "changes": "EXIF auto-orientation, proportional resize and WebP encoding. No content retouching."
+        }
+      ]
+    },
+    {
+      "original": "serra-nuvens.jpg",
+      "originalBytes": 6470105,
+      "originalRawWidth": 5184,
+      "originalRawHeight": 3456,
+      "originalExifOrientation": 1,
+      "author": "Moacir Ximenes",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nevasca_no_Cear%C3%A1.JPG",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "derivatives": [
+        {
+          "file": "serra-nuvens.webp",
+          "variant": "desktop",
+          "width": 1920,
+          "height": 1280,
+          "bytes": 236570,
+          "quality": 82,
+          "changes": "EXIF auto-orientation, proportional resize and WebP encoding. No content retouching."
+        },
+        {
+          "file": "serra-nuvens-mobile.webp",
+          "variant": "mobile",
+          "width": 960,
+          "height": 640,
+          "bytes": 62352,
+          "quality": 82,
+          "changes": "EXIF auto-orientation, proportional resize and WebP encoding. No content retouching."
+        }
+      ]
+    },
+    {
+      "original": "serra-estrada.jpg",
+      "originalBytes": 1587686,
+      "originalRawWidth": 4888,
+      "originalRawHeight": 3259,
+      "originalExifOrientation": 1,
+      "author": "Roney Souza",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_estrada_da_chapada.jpg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "derivatives": [
+        {
+          "file": "serra-estrada.webp",
+          "variant": "desktop",
+          "width": 1920,
+          "height": 1280,
+          "bytes": 460272,
+          "quality": 82,
+          "changes": "EXIF auto-orientation, proportional resize and WebP encoding. No content retouching."
+        },
+        {
+          "file": "serra-estrada-mobile.webp",
+          "variant": "mobile",
+          "width": 960,
+          "height": 639,
+          "bytes": 126562,
+          "quality": 82,
+          "changes": "EXIF auto-orientation, proportional resize and WebP encoding. No content retouching."
+        }
+      ]
+    }
+  ]
+}

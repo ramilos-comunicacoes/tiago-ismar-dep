@@ -2,203 +2,75 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="Tiago Ismar - Candidato a Deputado Federal pelo Ceará. Juntos, por um futuro melhor para a Serra da Ibiapaba e para o nosso país. Podemos 2050.">
-  <meta name="keywords" content="Tiago Ismar, Deputado Federal, Ceará, Serra da Ibiapaba, Podemos, 2050, Tianguá">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Tiago Ismar. Um olhar da Ibiapaba, histórias e conversas de perto. Explore a serra e acompanhe meus canais.">
   <meta name="author" content="Tiago Ismar">
-  <meta name="theme-color" content="#070D0A">
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="Tiago Ismar — Candidato a Deputado Federal">
-  <meta property="og:description" content="Juntos, por um futuro melhor para o nosso país. Serra da Ibiapaba · Ceará.">
+  <meta name="theme-color" content="#13231b">
+  <meta property="og:title" content="Tiago Ismar — Um olhar daqui">
+  <meta property="og:description" content="Da Ibiapaba, de perto. Conheça meu espaço, explore a serra e vamos conversar.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://tiagoismar.com">
-  <meta property="og:image" content="./assets/og-image.jpg">
+  <meta property="og:url" content="https://tiagoismar.com/">
+  <meta property="og:image" content="https://tiagoismar.com/assets/serra-panorama.jpg">
+  <meta property="og:image:alt" content="Panorama real do Parque Nacional de Ubajara, na Ibiapaba">
   <meta property="og:locale" content="pt_BR">
-
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Tiago Ismar — Candidato a Deputado Federal">
-  <meta name="twitter:description" content="Juntos, por um futuro melhor para o nosso país.">
-
-  <!-- Facebook Domain Verification -->
+  <meta name="twitter:title" content="Tiago Ismar — Um olhar daqui">
+  <meta name="twitter:description" content="Da Ibiapaba, de perto. Meu espaço pessoal.">
+  <meta name="twitter:image" content="https://tiagoismar.com/assets/serra-panorama.jpg">
   <meta name="facebook-domain-verification" content="2413dy9ftg2jfdvk3f0parwtnumem7">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="./assets/favicon_trans.png">
-
-  <!-- Google Fonts -->
+  <link rel="canonical" href="https://tiagoismar.com/">
+  <link rel="icon" type="image/svg+xml" href="./assets/personal-favicon.svg?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700;800;900&family=Outfit:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="./css/styles.css">
-
-  <title>Tiago Ismar — Candidato a Deputado Federal · Ceará</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css?v=3">
+  <script src="./js/main.js?v=3" defer></script>
+  <title>Tiago Ismar — Um olhar daqui</title>
 </head>
 <body>
-
-  <!-- ============================================ -->
-  <!-- PARTICLES CANVAS                              -->
-  <!-- ============================================ -->
-  <canvas id="particles" aria-hidden="true"></canvas>
-
-  <!-- Web Art Top & Bottom Decorative Frame Borders -->
-  <div class="webart-frame webart-frame-top" aria-hidden="true"></div>
-  <div class="webart-frame webart-frame-bottom" aria-hidden="true"></div>
-
-  <!-- ============================================ -->
-  <!-- BACKGROUND LAYER (UNIFORM BLUE TO GREEN GRADIENT OVER SERRA PHOTO) -->
-  <!-- ============================================ -->
-  <div class="bg-layer" aria-hidden="true">
-    <img src="./assets/hero-desktop.jpg" alt="" class="bg-image bg-image-desktop" onerror="this.style.display='none'">
-    <img src="./assets/hero-mobile.jpg" alt="" class="bg-image bg-image-mobile" onerror="this.style.display='none'">
-    
-    <!-- Subtle Repeating Brand Map Pattern Layer -->
-    <div class="bg-pattern"></div>
-
-    <!-- Uniform Horizontal Gradient (Left Blue -> Right Green) -->
-    <div class="bg-overlay"></div>
-    <div class="bg-vignette"></div>
-  </div>
-
-  <!-- ============================================ -->
-  <!-- MAIN CONTENT (Split Viewport for Desktop)    -->
-  <!-- ============================================ -->
-  <main class="content">
-
-    <!-- LEFT COLUMN: Main Artwork + New White Logo -->
-    <div class="hero-left-column anim-item" data-delay="0">
-      <div class="map-art-wrapper">
-        <div class="art-light-beam"></div>
-        <img src="./assets/tiago-principal.png" alt="Tiago Ismar - Serra da Ibiapaba" class="main-artwork">
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <header class="site-header">
+    <a class="brand" href="#inicio" aria-label="Tiago Ismar, início"><img class="brand-logo" src="./assets/brand/tiago-ismar-logo-light.svg" alt="" width="598" height="124"></a>
+    <button class="menu-toggle" aria-controls="main-nav" aria-expanded="false" type="button"><span>Menu</span><span class="menu-bars" aria-hidden="true"></span></button>
+    <nav id="main-nav" class="main-nav" aria-label="Navegação principal"><a href="#tiago">O Tiago<span>01</span></a><a href="#serra">A serra<span>02</span></a><a href="#olhares">Outros olhares<span>03</span></a><a class="nav-contact" href="#contato">Vamos conversar <span aria-hidden="true">↗</span></a></nav>
+    <div class="reading-progress" aria-hidden="true"></div>
+  </header>
+  <main id="conteudo">
+    <section class="hero" id="inicio" aria-labelledby="hero-title">
+      <div class="hero-landscape" data-parallax="0.13"><img src="./assets/serra-estrada.webp" alt="Estrada sinuosa entre as encostas verdes da Ibiapaba, em Viçosa do Ceará" fetchpriority="high" width="1920" height="1280"></div>
+      <div class="hero-shade" aria-hidden="true"></div><div class="mist mist-one" aria-hidden="true"></div><div class="mist mist-two" aria-hidden="true"></div>
+      <div class="hero-kicker"><span class="live-dot" aria-hidden="true"></span><span>SITE PESSOAL</span><span class="hero-kicker-line" aria-hidden="true"></span><span>IBIAPABA · CEARÁ · BRASIL</span></div>
+      <div class="hero-side-note" aria-hidden="true">O LUGAR DE ONDE EU VEJO O MUNDO</div>
+      <div class="hero-title-wrap"><p class="hero-pretitle">Da Ibiapaba. De perto.</p><h1 class="hero-title" id="hero-title"><span>TIAGO</span> <span>ISMAR<span class="title-period">.</span></span></h1></div>
+      <div class="hero-bottom"><a class="explore-link" href="#tiago"><span class="round-arrow" aria-hidden="true">↓</span><span>Vem conhecer<br><strong>meu mundo</strong></span></a><p>Meu lugar é aqui.<br>A conversa é com você.</p><span class="hero-photo-label"><span class="tiny-cross" aria-hidden="true">+</span> VIÇOSA DO CEARÁ · IBIAPABA</span></div>
+    </section>
+    <section class="intro" id="tiago" aria-labelledby="intro-title">
+      <div class="section-top shell"><span class="eyebrow">01 / TIAGO ISMAR</span><span class="eyebrow">PESSOAS. LUGARES. CONVERSAS.</span></div>
+      <div class="intro-grid shell">
+        <figure class="portrait-figure" data-reveal><div class="portrait-window"><img src="./assets/tiago-real-intro.webp" srcset="./assets/tiago-real-intro-mobile.webp 640w, ./assets/tiago-real-intro.webp 1200w" sizes="(max-width: 640px) 85vw, 43vw" alt="Tiago Ismar sorrindo, sentado de terno azul e camisa branca" width="1200" height="1800" loading="lazy"><span class="photo-corner corner-one" aria-hidden="true"></span><span class="photo-corner corner-two" aria-hidden="true"></span><span class="portrait-number" aria-hidden="true">TI / 01</span></div><figcaption>Tiago Ismar <span>Do meu acervo pessoal</span></figcaption></figure>
+        <div class="intro-copy"><span class="eyebrow" data-reveal>PRAZER, TIAGO.</span><h2 class="display" id="intro-title" data-reveal>UM OLHAR<br><span class="serif-free">DAQUI.</span><svg class="hand-arrow" viewBox="0 0 100 75" aria-hidden="true"><path d="M93 10C58 1 76 56 15 43M28 28 11 44l22 14"/></svg></h2><div class="intro-body" data-reveal><p class="intro-lead">Tem um pouco da serra<br>em tudo que me inspira.</p><p>Este espaço tem meu nome e a paisagem que faz parte da minha identidade. Um lugar para me acompanhar, conhecer minhas referências e começar uma conversa.</p><p>Por aqui, a Ibiapaba aparece como ela é: cheia de vida, de caminhos e de histórias. Fique à vontade.</p><a class="underlined-link" href="https://instagram.com/tiagoismar" target="_blank" rel="noopener noreferrer">Me encontre no Instagram <span aria-hidden="true">↗</span></a></div></div>
       </div>
-      
-      <!-- New White Logo Anchored Below Map -->
-      <div class="logo-wrapper">
-        <img src="./assets/logo_trans.png" alt="Logo Tiago Ismar 2050" class="main-logo">
+      <div class="ticker" aria-hidden="true"><div class="ticker-track"><span>IBIAPABA <i>↗</i> DE PERTO <i>↗</i> TIAGO ISMAR <i>↗</i> </span><span>IBIAPABA <i>↗</i> DE PERTO <i>↗</i> TIAGO ISMAR <i>↗</i> </span></div></div>
+    </section>
+    <section class="serra-cinema" id="serra" aria-labelledby="serra-title">
+      <div class="cinema-photo" data-parallax="0.16"><img src="./assets/serra-nuvens.webp" alt="Nuvens sobre a paisagem verde da Serra da Ibiapaba, em Tianguá" width="1920" height="1280" loading="lazy"></div><div class="cinema-shade" aria-hidden="true"></div><div class="mist cinema-mist" aria-hidden="true"></div>
+      <div class="cinema-top shell"><span class="eyebrow">02 / O MEU LUGAR</span><span class="eyebrow">TIANGUÁ — CE</span></div>
+      <div class="cinema-content shell"><div data-reveal><p class="eyebrow">PARE UM POUCO. OLHE EM VOLTA.</p><h2 id="serra-title" class="cinema-title">SERRA<br><span>VIVA.</span></h2></div><div class="cinema-aside" data-reveal><svg class="contour" viewBox="0 0 200 110" aria-hidden="true"><path d="M0 95C20 93 22 33 57 26S100 80 132 45 172 25 200 5M0 105C27 99 30 45 60 39S101 94 138 59 173 40 200 20M10 110C40 103 40 62 67 56S111 109 150 77 177 59 200 39M30 110C51 97 56 77 75 74S116 123 164 93 185 79 200 62"/></svg><h3>Não é só cenário.<br>É parte de mim.</h3><p>A serra, o verde, o horizonte.<br>Um convite para olhar com calma<br>para o que está perto.</p><a class="underlined-link light-link" href="#olhares">Explore outros olhares <span aria-hidden="true">↗</span></a></div></div>
+      <div class="cinema-bottom shell"><span class="eyebrow">FOTOGRAFIA REAL DA IBIAPABA</span><span class="eyebrow">A PAISAGEM SEGUE. A GENTE TAMBÉM.</span></div>
+    </section>
+    <section class="gallery-section" id="olhares" aria-labelledby="gallery-title">
+      <div class="gallery-heading shell"><div><p class="eyebrow" data-reveal>03 / UM LUGAR, MUITOS OLHARES</p><h2 class="display" id="gallery-title" data-reveal>A SERRA,<br>SEM PRESSA.</h2></div><div class="gallery-intro" data-reveal><p>Três perspectivas da Ibiapaba.<br>Fotografias reais para chegar mais perto.</p><div class="gallery-controls"><span class="gallery-count"><span data-gallery-current>01</span><span class="count-line" aria-hidden="true"></span><span data-gallery-total>03</span></span><button type="button" data-gallery-prev aria-label="Fotografia anterior">←</button><button type="button" data-gallery-next aria-label="Próxima fotografia">→</button></div></div></div>
+      <div class="landscape-track" aria-label="Galeria de fotografias da Ibiapaba" tabindex="0">
+        <figure class="landscape-card"><button type="button" data-photo="./assets/serra-panorama.webp" data-caption="Parque Nacional de Ubajara · Fotografia de Marcos de Souza Faria · CC BY-SA 4.0" aria-label="Ampliar panorama do Parque Nacional de Ubajara"><img src="./assets/serra-panorama.webp" alt="Horizonte e escarpas do Parque Nacional de Ubajara" width="2560" height="680" loading="lazy"><span class="photo-open" aria-hidden="true">↗</span><span class="photo-index" aria-hidden="true">01</span></button><figcaption><h3>O horizonte.</h3><span>UBAJARA / CEARÁ</span></figcaption></figure>
+        <figure class="landscape-card"><button type="button" data-photo="./assets/serra-nuvens.webp" data-caption="Serra da Ibiapaba, Tianguá · Fotografia de Moacir Ximenes · CC BY-SA 4.0" aria-label="Ampliar fotografia da serra em Tianguá"><img src="./assets/serra-nuvens.webp" alt="Encostas verdes e nuvens da Ibiapaba em Tianguá" width="1920" height="1280" loading="lazy"><span class="photo-open" aria-hidden="true">↗</span><span class="photo-index" aria-hidden="true">02</span></button><figcaption><h3>Entre o verde e o céu.</h3><span>TIANGUÁ / CEARÁ</span></figcaption></figure>
+        <figure class="landscape-card"><button type="button" data-photo="./assets/serra-estrada.webp" data-caption="Chapada da Ibiapaba, Viçosa do Ceará · Fotografia de Roney Souza · CC BY-SA 4.0" aria-label="Ampliar fotografia da estrada na Ibiapaba"><img src="./assets/serra-estrada.webp" alt="Estrada pela paisagem da chapada da Ibiapaba, em Viçosa do Ceará" width="1920" height="1280" loading="lazy"><span class="photo-open" aria-hidden="true">↗</span><span class="photo-index" aria-hidden="true">03</span></button><figcaption><h3>Os caminhos.</h3><span>VIÇOSA DO CEARÁ / CEARÁ</span></figcaption></figure>
       </div>
-    </div>
-
-    <!-- RIGHT COLUMN: CTA Slogan + Action Cards + Vote 2050 -->
-    <div class="hero-right-column">
-
-      <!-- CTA Slogan -->
-      <p class="slogan anim-item" data-delay="1">
-        Juntos por uma <span class="text-yellow">Ibiapaba</span> mais <strong>próspera, sustentável e acolhedora</strong>
-      </p>
-
-      <!-- Actions Group (WhatsApp & Instagram Cards) -->
-      <div class="actions-group anim-item" data-delay="2">
-
-        <!-- WhatsApp Community Card -->
-        <a
-          href="https://chat.whatsapp.com/FBN2xU7T8hKIobXfv6KmLA"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="action-card whatsapp-card"
-        >
-          <div class="card-icon wpp-icon-bg">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-            </svg>
-          </div>
-          <div class="card-text">
-            <strong class="card-title">Comunidade no WhatsApp</strong>
-            <span class="card-subtitle">Participe do grupo de apoiadores</span>
-          </div>
-          <div class="card-arrow-circle">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </div>
-        </a>
-
-        <!-- Instagram Card -->
-        <a
-          href="https://instagram.com/tiagoismar"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="action-card instagram-card"
-        >
-          <div class="card-icon insta-icon-bg">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-            </svg>
-          </div>
-          <div class="card-text">
-            <strong class="card-title">Siga no Instagram</strong>
-            <span class="card-subtitle">Acompanhe nossas novidades</span>
-          </div>
-          <div class="card-arrow-circle">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </div>
-        </a>
-
-        <!-- Google Drive Projects Card -->
-        <a
-          href="https://drive.google.com/drive/folders/1WCIQKy1buhZQh47p5himgWGvTxPpTyLY?usp=sharing"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="action-card drive-card"
-        >
-          <div class="card-icon drive-icon-bg">
-            <svg viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
-              <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/>
-              <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00AC47"/>
-              <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.85 10.15z" fill="#EA4335"/>
-              <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.45-1.2h-18.6c-1.55 0-3.1.4-4.45 1.2z" fill="#00832D"/>
-              <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.45 1.2h50.9c1.55 0 3.1-.4 4.45-1.2z" fill="#FFBA00"/>
-              <path d="m73.4 21.8-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.5c0-1.55-.4-3.1-1.2-4.5z" fill="#00AC47"/>
-            </svg>
-          </div>
-          <div class="card-text">
-            <strong class="card-title">Projetos & Propostas</strong>
-            <span class="card-subtitle">Acesse nossa pasta oficial no Drive</span>
-          </div>
-          <div class="card-arrow-circle">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </div>
-        </a>
-
-      </div>
-
-      <!-- Official VOTE 2050 Brand Artwork -->
-      <div class="vote-art-wrapper anim-item" data-delay="3">
-        <img src="./assets/vote2050.png" alt="Vote 2050 - Tiago Ismar" class="vote-art-img">
-      </div>
-
-    </div>
-
+      <p class="gallery-hint shell"><span aria-hidden="true">↔</span> Deslize para explorar. Toque na fotografia para ampliar.</p>
+    </section>
+    <section class="contact-section" id="contato" aria-labelledby="contact-title"><div class="shell contact-grid"><div class="contact-main"><p class="eyebrow" data-reveal>04 / DO SITE PARA A CONVERSA</p><h2 class="display" id="contact-title" data-reveal>A GENTE<br>SE ENCONTRA<span class="lime">.</span></h2><p class="contact-copy" data-reveal>Uma mensagem. Uma ideia. Um novo assunto.<br>Escolha seu canal e chegue mais perto.</p><div class="contact-links"><a href="https://instagram.com/tiagoismar" target="_blank" rel="noopener noreferrer"><span><small>ME ACOMPANHE</small>Instagram</span><span class="contact-arrow" aria-hidden="true">↗</span></a><a href="https://chat.whatsapp.com/FBN2xU7T8hKIobXfv6KmLA" target="_blank" rel="noopener noreferrer"><span><small>ENTRE NA COMUNIDADE</small>WhatsApp</span><span class="contact-arrow" aria-hidden="true">↗</span></a></div></div><figure class="contact-portrait" data-reveal><img src="./assets/tiago-real-contato.webp" srcset="./assets/tiago-real-contato-mobile.webp 640w, ./assets/tiago-real-contato.webp 1200w" sizes="(max-width: 640px) 85vw, 43vw" alt="Tiago Ismar de camisa branca, sorrindo e olhando para o horizonte" width="1200" height="1800" loading="lazy"><figcaption><span>ATÉ JÁ.</span><span>TIAGO ISMAR ↗</span></figcaption></figure></div></section>
   </main>
-
-  <!-- Electoral Legal Disclaimer Footer (Centered across full viewport) -->
-  <div class="electoral-footer anim-item" data-delay="4">
-    <span>PROPAGANDA ELEITORAL</span>
-    <span class="foot-sep">|</span>
-    <span>TIAGO ISMAR</span>
-    <span class="foot-sep">|</span>
-    <span>DEPUTADO FEDERAL</span>
-    <span class="foot-sep">|</span>
-    <span>2050</span>
-    <span class="foot-sep">|</span>
-    <span>PODEMOS</span>
-    <span class="foot-sep">|</span>
-    <span>CNPJ 68.594.335/0001-19</span>
-  </div>
-
-  <!-- Scripts -->
-  <script src="./js/main.js"></script>
-
+  <footer class="site-footer"><div class="shell footer-top"><a class="brand" href="#inicio" aria-label="Tiago Ismar, voltar ao início"><img class="brand-logo" src="./assets/brand/tiago-ismar-logo-light.svg" alt="" width="598" height="124"></a><span>DA IBIAPABA. DE PERTO.</span><a href="#inicio" class="back-top">Voltar ao topo <span aria-hidden="true">↑</span></a></div><div class="shell footer-bottom"><span>© <span id="year">2026</span> Tiago Ismar</span><details class="image-credits"><summary>Créditos das imagens <span aria-hidden="true">+</span></summary><div id="credits-content"><p>Fotografias: <a href="https://commons.wikimedia.org/wiki/File:Parque_Nacional_de_Ubajara_-_Bicas.jpg" target="_blank" rel="noopener noreferrer">Ubajara — Marcos de Souza Faria</a>; <a href="https://commons.wikimedia.org/wiki/File:Nevasca_no_Cear%C3%A1.JPG" target="_blank" rel="noopener noreferrer">Tianguá — Moacir Ximenes</a>; <a href="https://commons.wikimedia.org/wiki/File:A_estrada_da_chapada.jpg" target="_blank" rel="noopener noreferrer">Viçosa do Ceará — Roney Souza</a>. Wikimedia Commons, sob <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Recortes responsivos, ajustes de cor e otimização para web. As fotografias derivadas permanecem sob a mesma licença.</p><p>Retratos de Tiago Ismar: fotografias originais fornecidas por seu acervo. Otimizadas para a web, sem geração de rosto ou alteração de suas características.</p></div></details><span>CEARÁ, BRASIL ↗</span></div></footer>
+  <button class="motion-toggle" data-motion-toggle type="button" aria-pressed="false"><span class="motion-icon" aria-hidden="true">Ⅱ</span><span data-motion-label>Pausar movimento</span></button>
+  <dialog id="photo-dialog" class="photo-dialog" aria-label="Fotografia ampliada da Ibiapaba"><button type="button" data-dialog-close aria-label="Fechar fotografia">Fechar <span aria-hidden="true">×</span></button><img data-dialog-image alt=""><p data-dialog-caption></p></dialog>
 </body>
 </html>

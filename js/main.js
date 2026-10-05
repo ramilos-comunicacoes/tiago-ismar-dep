@@ -1,185 +1,284 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // 1. Preloader & Initialization
-  const preloader = document.getElementById('preloader');
-  
-  // 6. Prevent Scroll setup
-  const preventScroll = (e) => {
-    e.preventDefault();
-  };
-  const preventScrollKeys = (e) => {
-    const keys = [32, 33, 34, 35, 36, 37, 38, 39, 40]; // space, page up/down, end, home, arrows
-    if (keys.includes(e.keyCode)) {
-      e.preventDefault();
-    }
-  };
-  
-  // Enable prevent scroll initially
-  window.addEventListener('wheel', preventScroll, { passive: false });
-  window.addEventListener('touchmove', preventScroll, { passive: false });
-  window.addEventListener('keydown', preventScrollKeys, { passive: false });
+(() => {
+  'use strict';
 
-  // Initialize page animations and particles immediately
-  initAnimations();
-  initParticles();
+  const body = document.body;
+  const root = document.documentElement;
+  const header = document.querySelector('.site-header');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const motionButton = document.querySelector('[data-motion-toggle]');
+  const motionLabel = document.querySelector('[data-motion-label]');
+  const revealElements = [...document.querySelectorAll('[data-reveal]')];
+  const parallaxElements = [...document.querySelectorAll('[data-parallax]')];
+  const visibleParallax = new Set();
+  const parallaxOffsets = new WeakMap();
+  let motionPaused = reducedMotion.matches;
+  let motionOverridden = false;
+  let framePending = false;
 
-  // 2. Staggered Entrance Animations & 5. Name Typewriter Effect
-  function initAnimations() {
-    const animItems = document.querySelectorAll('.anim-item');
-    const nameText = document.getElementById('nameText');
-    let nameToType = 'TIAGO ISMAR';
-    
-    if (nameText) {
-      nameToType = nameText.textContent.trim() || 'TIAGO ISMAR';
-      nameText.textContent = '';
-    }
+  const menuButton = document.querySelector('.menu-toggle');
+  const navigation = document.querySelector('#main-nav');
+  const menuBackground = [document.querySelector('main'), document.querySelector('.site-footer'), motionButton].filter(Boolean);
+  const initialInertStates = new Map();
 
-    animItems.forEach(item => {
-      const delayVal = parseInt(item.getAttribute('data-delay') || '0', 10);
-      const delay = 100 + (delayVal * 150);
-      
-      setTimeout(() => {
-        item.classList.add('visible');
-        
-        // Trigger typewriter when name text container becomes visible
-        if (item.contains(nameText) || item === nameText) {
-          typeWriter(nameText, nameToType, 0);
+  function closeMenu({ returnFocus = false } = {}) {
+    body.classList.remove('menu-open');
+    navigation?.classList.remove('is-open');
+    menuButton?.setAttribute('aria-expanded', 'false');
+    initialInertStates.forEach((wasInert, element) => { element.inert = wasInert; });
+    initialInertStates.clear();
+    if (returnFocus) menuButton?.focus();
+  }
+
+  if (menuButton && navigation) {
+    menuButton.setAttribute('aria-controls', navigation.id);
+    menuButton.setAttribute('aria-expanded', 'false');
+    menuButton.addEventListener('click', () => {
+      const isOpen = !body.classList.contains('menu-open');
+      if (!isOpen) {
+        closeMenu();
+        return;
+      }
+      body.classList.add('menu-open');
+      navigation.classList.add('is-open');
+      menuButton.setAttribute('aria-expanded', 'true');
+      menuBackground.forEach((element) => {
+        initialInertStates.set(element, element.inert);
+        element.inert = true;
+      });
+    });
+
+    navigation.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('a')) closeMenu();
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!(event.target instanceof Node)) return;
+      if (!navigation.contains(event.target) && !menuButton.contains(event.target)) closeMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!body.classList.contains('menu-open')) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeMenu({ returnFocus: true });
+      } else if (event.key === 'Tab') {
+        const focusable = [...(header || navigation).querySelectorAll('a[href], button:not([disabled])')]
+          .filter((element) => element.getClientRects().length > 0);
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const outsideMenu = !focusable.includes(document.activeElement);
+        if (event.shiftKey && (document.activeElement === first || outsideMenu)) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || outsideMenu)) {
+          event.preventDefault();
+          first?.focus();
         }
-      }, delay);
+      }
+    });
+
+    window.matchMedia('(min-width: 960px)').addEventListener('change', (event) => {
+      if (event.matches) closeMenu();
     });
   }
 
-  // Typewriter Function
-  function typeWriter(element, text, index) {
-    if (!element) return;
-    
-    if (index < text.length) {
-      element.textContent += text.charAt(index);
-      setTimeout(() => {
-        typeWriter(element, text, index + 1);
-      }, 80);
+  // Reveal once. Without JavaScript, the page keeps its normal visible state.
+  let revealObserver;
+  if ('IntersectionObserver' in window) {
+    revealObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('is-visible');
+        revealObserver.unobserve(entry.target);
+      }
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
+
+    const parallaxObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) visibleParallax.add(entry.target);
+        else visibleParallax.delete(entry.target);
+      }
+      requestFrame();
+    }, { rootMargin: '100px 0px' });
+
+    parallaxElements.forEach((element) => parallaxObserver.observe(element));
+  } else {
+    revealElements.forEach((element) => element.classList.add('is-visible'));
+    parallaxElements.forEach((element) => visibleParallax.add(element));
+  }
+
+  function setMotionState(paused) {
+    motionPaused = paused;
+    body.classList.toggle('motion-paused', paused);
+    root.classList.toggle('motion-paused', paused);
+    root.classList.toggle('motion-enabled', !paused);
+    motionButton?.setAttribute('aria-pressed', String(paused));
+    if (motionLabel) motionLabel.textContent = paused ? 'Ativar movimento' : 'Pausar movimento';
+
+    if (paused) {
+      revealObserver?.disconnect();
+      revealElements.forEach((element) => element.classList.add('is-visible'));
+      parallaxElements.forEach((element) => {
+        element.style.setProperty('--parallax-y', '0px');
+        parallaxOffsets.set(element, 0);
+      });
+      track?.scrollTo({ left: track.scrollLeft, behavior: 'instant' });
     } else {
-      element.classList.add('cursor-blink');
-      setTimeout(() => {
-        element.classList.remove('cursor-blink');
-      }, 2000);
+      revealElements.forEach((element) => {
+        if (!element.classList.contains('is-visible')) revealObserver?.observe(element);
+      });
     }
+    requestFrame();
   }
 
-  // 3. Particle System
-  function initParticles() {
-    const canvas = document.getElementById('particles');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    let particlesArray = [];
-    
-    // Set canvas dimensions
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    
-    class Particle {
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2 + 0.5; // 0.5 to 2.5
-        this.speedY = Math.random() * -0.25 - 0.15; // -0.15 to -0.4
-        this.speedX = Math.random() * 0.2 - 0.1; // -0.1 to 0.1
-        this.opacity = Math.random() * 0.2 + 0.05; // 0.05 to 0.25
-        this.color = Math.random() > 0.3 ? '#D4A843' : '#1B8C3A'; // 70% gold, 30% green
-      }
-      
-      update() {
-        this.y += this.speedY;
-        this.x += this.speedX;
-        
-        // Reset if it goes off top
-        if (this.y < -10) {
-          this.y = canvas.height + 10;
-          this.x = Math.random() * canvas.width;
-        }
-        
-        // Wrap horizontally
-        if (this.x > canvas.width + 10) this.x = -10;
-        if (this.x < -10) this.x = canvas.width + 10;
-      }
-      
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        
-        // Convert hex to rgb for rgba
-        let r, g, b;
-        if (this.color === '#D4A843') { // Gold
-          r = 212; g = 168; b = 67;
-        } else { // Green
-          r = 27; g = 140; b = 58;
-        }
-        
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity})`;
-        ctx.fill();
-      }
-    }
-    
-    function createParticles() {
-      particlesArray = [];
-      const numParticles = window.innerWidth >= 768 ? 35 : 20;
-      for (let i = 0; i < numParticles; i++) {
-        particlesArray.push(new Particle());
-      }
-    }
-    
-    createParticles();
-    
-    // Recreate particles occasionally on resize to adjust amount
-    window.addEventListener('resize', () => {
-      // Debounce slightly
-      clearTimeout(window.resizeParticleTimeout);
-      window.resizeParticleTimeout = setTimeout(createParticles, 200);
-    });
-    
-    function animateParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < particlesArray.length; i++) {
-        particlesArray[i].update();
-        particlesArray[i].draw();
-      }
-      requestAnimationFrame(animateParticles);
-    }
-    
-    animateParticles();
-  }
-
-  // 4. Image Placeholder Handling
-  const logoImg = document.querySelector('.logo');
-  const logoPlaceholder = document.querySelector('.logo-placeholder');
-  
-  if (logoImg) {
-    logoImg.addEventListener('error', () => {
-      logoImg.style.display = 'none';
-      if (logoPlaceholder) logoPlaceholder.style.display = 'flex';
-    });
-  }
-
-  const profileImg = document.querySelector('.photo-inner img');
-  const profilePlaceholder = document.querySelector('.photo-placeholder');
-  
-  if (profileImg) {
-    profileImg.addEventListener('error', () => {
-      profileImg.style.display = 'none';
-      if (profilePlaceholder) profilePlaceholder.style.display = 'flex';
-    });
-  }
-
-  // Handle all background images (desktop + mobile)
-  const bgImages = document.querySelectorAll('.bg-image');
-  bgImages.forEach(img => {
-    img.addEventListener('error', () => {
-      img.style.display = 'none';
-    });
+  motionButton?.addEventListener('click', () => {
+    motionOverridden = true;
+    setMotionState(!motionPaused);
   });
-});
+
+  reducedMotion.addEventListener('change', (event) => {
+    if (!motionOverridden) setMotionState(event.matches);
+  });
+
+  const track = document.querySelector('.landscape-track');
+  const cards = track ? [...track.querySelectorAll('.landscape-card')] : [];
+  const previousButton = document.querySelector('[data-gallery-prev]');
+  const nextButton = document.querySelector('[data-gallery-next]');
+  const currentIndicator = document.querySelector('[data-gallery-current]');
+  const totalIndicator = document.querySelector('[data-gallery-total]');
+  const formatIndex = (value) => String(value).padStart(2, '0');
+
+  if (totalIndicator) totalIndicator.textContent = formatIndex(cards.length);
+
+  function cardPositions() {
+    if (!track || !cards.length) return [];
+    const firstLeft = cards[0].getBoundingClientRect().left;
+    return cards.map((card) => card.getBoundingClientRect().left - firstLeft);
+  }
+
+  function updateGallery() {
+    if (!track || !cards.length) return;
+    const maximumScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const positions = cardPositions();
+    let closestIndex = 0;
+
+    positions.forEach((position, index) => {
+      if (Math.abs(position - track.scrollLeft) < Math.abs(positions[closestIndex] - track.scrollLeft)) {
+        closestIndex = index;
+      }
+    });
+
+    // A final card may stop before its left edge reaches the viewport edge.
+    if (maximumScroll > 2 && track.scrollLeft >= maximumScroll - 2) closestIndex = cards.length - 1;
+    if (currentIndicator) currentIndicator.textContent = formatIndex(closestIndex + 1);
+    if (previousButton) previousButton.disabled = track.scrollLeft <= 2;
+    if (nextButton) nextButton.disabled = track.scrollLeft >= maximumScroll - 2;
+  }
+
+  function moveGallery(direction) {
+    if (!track || !cards.length) return;
+    const positions = cardPositions();
+    const maximumScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const nextPosition = direction > 0
+      ? positions.find((position) => position > track.scrollLeft + 4)
+      : [...positions].reverse().find((position) => position < track.scrollLeft - 4);
+    const destination = nextPosition ?? (direction > 0 ? maximumScroll : 0);
+
+    track.scrollTo({
+      left: Math.max(0, Math.min(destination, maximumScroll)),
+      behavior: motionPaused ? 'instant' : 'smooth',
+    });
+    requestFrame();
+  }
+
+  previousButton?.addEventListener('click', () => moveGallery(-1));
+  nextButton?.addEventListener('click', () => moveGallery(1));
+  track?.addEventListener('scroll', requestFrame, { passive: true });
+
+  // Native dialog supplies keyboard focus containment and Escape dismissal.
+  const photoDialog = document.querySelector('#photo-dialog');
+  const dialogImage = photoDialog?.querySelector('[data-dialog-image]');
+  const dialogCaption = photoDialog?.querySelector('[data-dialog-caption]');
+  const dialogClose = photoDialog?.querySelector('[data-dialog-close]');
+  let photoTrigger = null;
+
+  if (photoDialog && dialogImage && typeof photoDialog.showModal === 'function') {
+    document.querySelectorAll('[data-photo]').forEach((trigger) => {
+      trigger.addEventListener('click', (event) => {
+        const source = trigger.getAttribute('data-photo');
+        if (!source) return;
+        event.preventDefault();
+        photoTrigger = trigger;
+        const caption = trigger.getAttribute('data-caption') || '';
+        dialogImage.src = source;
+        dialogImage.alt = trigger.getAttribute('data-photo-alt') || trigger.querySelector('img')?.alt || caption;
+        if (dialogCaption) dialogCaption.textContent = caption;
+        closeMenu();
+        if (!photoDialog.open) photoDialog.showModal();
+        body.classList.add('photo-open');
+        dialogClose?.focus({ preventScroll: true });
+      });
+    });
+
+    dialogClose?.addEventListener('click', () => photoDialog.close());
+    photoDialog.addEventListener('click', (event) => {
+      if (event.target !== photoDialog) return;
+      const bounds = photoDialog.getBoundingClientRect();
+      const outside = event.clientX < bounds.left || event.clientX > bounds.right
+        || event.clientY < bounds.top || event.clientY > bounds.bottom;
+      if (outside) photoDialog.close();
+    });
+    photoDialog.addEventListener('close', () => {
+      body.classList.remove('photo-open');
+      if (photoTrigger?.isConnected) photoTrigger.focus({ preventScroll: true });
+      photoTrigger = null;
+    });
+  }
+
+  // All scroll and resize work shares a single frame; no permanent animation loop.
+  function requestFrame() {
+    if (framePending) return;
+    framePending = true;
+    window.requestAnimationFrame(updateFrame);
+  }
+
+  function updateFrame() {
+    framePending = false;
+    const scrollTop = Math.max(0, window.scrollY);
+    const scrollRange = Math.max(0, root.scrollHeight - window.innerHeight);
+    root.style.setProperty('--scroll-progress', String(scrollRange ? Math.min(1, scrollTop / scrollRange) : 0));
+    header?.classList.toggle('is-scrolled', scrollTop > 30);
+
+    if (!motionPaused) {
+      const viewportCenter = window.innerHeight / 2;
+      for (const element of visibleParallax) {
+        const factor = Number.parseFloat(element.getAttribute('data-parallax'));
+        if (!Number.isFinite(factor)) continue;
+        const bounds = element.getBoundingClientRect();
+        // Measure the untransformed position, avoiding drift between repeated frames.
+        const center = bounds.top - (parallaxOffsets.get(element) || 0) + bounds.height / 2;
+        const offset = Number(Math.max(-80, Math.min(80, (viewportCenter - center) * factor)).toFixed(2));
+        element.style.setProperty('--parallax-y', `${offset}px`);
+        parallaxOffsets.set(element, offset);
+      }
+    }
+    updateGallery();
+  }
+
+  const year = document.querySelector('#year');
+  if (year) year.textContent = String(new Date().getFullYear());
+
+  window.addEventListener('scroll', requestFrame, { passive: true });
+  window.addEventListener('resize', requestFrame, { passive: true });
+  window.addEventListener('load', requestFrame, { once: true });
+  document.addEventListener('focusin', (event) => {
+    // Keyboard navigation must never focus an element that is waiting to reveal.
+    if (event.target instanceof Element) {
+      event.target.closest('[data-reveal]')?.classList.add('is-visible');
+    }
+  });
+
+  body.classList.add('js-ready');
+  setMotionState(motionPaused);
+  window.requestAnimationFrame(() => body.classList.add('is-loaded'));
+})();

@@ -1,0 +1,56 @@
+{
+  "source": "Original photographs supplied by the site owner",
+  "processing": {
+    "tool": "sharp",
+    "pipeline": "rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 88, effort: 6 })",
+    "metadata": "EXIF, XMP and other input metadata omitted from public derivatives",
+    "retouching": false,
+    "generativeEditing": false,
+    "cropping": false,
+    "originalFilesPublished": false
+  },
+  "photos": [
+    {
+      "role": "intro",
+      "originalFilename": "LIC04519.JPG",
+      "originalSha256": "937ba8c1b85a09369c5654518d7c698c3820fdf3507eb88ab2e31a57b5879029",
+      "originalWidth": 1365,
+      "originalHeight": 2048,
+      "derivatives": [
+        {
+          "file": "tiago-real-intro.webp",
+          "width": 1200,
+          "height": 1800,
+          "bytes": 104146
+        },
+        {
+          "file": "tiago-real-intro-mobile.webp",
+          "width": 640,
+          "height": 960,
+          "bytes": 34184
+        }
+      ]
+    },
+    {
+      "role": "contato",
+      "originalFilename": "LIC04470.JPG",
+      "originalSha256": "695f6e3cd286ae52c30af8879b09ec1bb9be900407f2a40963814a16745b20f8",
+      "originalWidth": 1365,
+      "originalHeight": 2048,
+      "derivatives": [
+        {
+          "file": "tiago-real-contato.webp",
+          "width": 1200,
+          "height": 1800,
+          "bytes": 79212
+        },
+        {
+          "file": "tiago-real-contato-mobile.webp",
+          "width": 640,
+          "height": 960,
+          "bytes": 24344
+        }
+      ]
+    }
+  ]
+}

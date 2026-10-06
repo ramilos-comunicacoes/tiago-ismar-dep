@@ -1,8 +1,13 @@
-# Tiago Ismar — Horizonte aberto · v4
+# Tiago Ismar — Serra da Ibiapaba · v5
 
-A marca parte de um **T maiúsculo** de barra reta e haste vertical. Dentro da barra, um recorte transparente desenha a subida da encosta, um pequeno platô, o vale e um segundo relevo. A paisagem é uma interpretação abstrata da serra, sem representar um ponto geográfico específico.
+O símbolo representa a paisagem com duas formas preenchidas: o topo extenso da chapada, uma escarpa mais íngreme à direita e uma encosta em primeiro plano. O espaço transparente entre elas sugere o vale. A silhueta assimétrica e as transições curvas dão movimento ao relevo.
 
-A letra mantém sua estrutura e a linha de serra tem curvas assimétricas. O símbolo utiliza dois contornos preenchidos, sem moldura, seta, escudo ou efeitos de volume. As versões clara e escura foram inspecionadas em 16, 24 e 32 px; a aplicação de 24 px ou mais preserva melhor a leitura do recorte.
+É um desenho original inspirado na Ibiapaba, não um símbolo oficial da região, representação cartográfica ou reprodução de uma fotografia. A paisagem é a forma principal da marca; o nome Tiago Ismar permanece na assinatura horizontal.
+
+## Referências de forma
+
+- Panorâmica de Ubajara já utilizada no site, em `assets/cidades/ubajara.webp`: observação do topo longo, escarpa e vale, sem traçado da fotografia.
+- [Plano de Manejo do Parque Nacional de Ubajara — ICMBio](https://www.gov.br/icmbio/pt-br/assuntos/biodiversidade/unidade-de-conservacao/unidades-de-biomas/caatinga/lista-de-ucs/parna-de-ubajara/arquivos/plano-de-manejo-parna-ubajara.pdf): contexto da chapada, escarpas e paisagens serranas.
 
 ## Entregáveis
 
@@ -12,7 +17,7 @@ A letra mantém sua estrutura e a linha de serra tem curvas assimétricas. O sí
 - `tiago-ismar-logo-light.svg` / `.png`: assinatura horizontal para fundos escuros.
 - `../personal-favicon.svg`: aplicação compacta para a aba do navegador.
 
-Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. O fundo e o recorte da serra são transparentes. Os SVGs mantêm a tipografia em curvas e não carregam fontes, máscaras ou imagens externas.
+Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. O fundo e o vale são transparentes. Os SVGs usam curvas vetoriais, sem fontes, máscaras, imagens externas ou filtros.
 
 ## Uso
 
@@ -20,19 +25,19 @@ Os PNGs do símbolo têm 1200 × 1200 px; as assinaturas têm 2400 × 506 px. O 
 - Papel: `#eeeee5`
 - Lima: `#d5eb64`
 
-Preservar as proporções. Usar a assinatura horizontal a partir de 150 px de largura. Preferir o símbolo com pelo menos 24 px, reservando 16 px para aplicações compactas como favicon. Evitar contornos extras, sombras ou efeitos de volume. A marca também pode ser aplicada em uma única tinta.
+Preservar as proporções e o espaço entre as duas formas. Preferir o símbolo com 24 px ou mais; a silhueta simplificada permite uso compacto no favicon. A assinatura horizontal é indicada a partir de 150 px de largura. A marca funciona em uma única tinta; evitar sombras, volume e linhas adicionais no vale.
 
-A assinatura mantém o viewBox `0 0 588 124` e o símbolo mantém `0 0 120 120` para preservar a integração existente.
+Os viewBoxes permanecem `0 0 588 124` para a assinatura e `0 0 120 120` para o símbolo, preservando a integração no site.
 
 ## Reconstrução
 
-`wordmark-outlines.json` preserva as curvas da assinatura condensada. Não redistribui arquivos de fonte. Para reconstruir os SVGs e o favicon, basta Node.js:
+`wordmark-outlines.json` preserva as curvas do nome. Para reconstruir os SVGs e o favicon:
 
 ```sh
 node assets/brand/build-brand.mjs
 ```
 
-Para reconstruir também os PNGs transparentes, informar o diretório de pacotes do runtime que contém `sharp`:
+Para exportar também os PNGs transparentes:
 
 ```powershell
 node assets/brand/build-brand.mjs --sharp-root 'C:/Users/const/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'

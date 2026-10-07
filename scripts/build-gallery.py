@@ -28,20 +28,13 @@ def main():
             assert p.get(required), f'{slug}: missing {required}'
         for filename in (f'{slug}.webp', f'{slug}-mobile.webp'):
             assert (ROOT / 'assets/cidades' / filename).is_file(), filename
-        image = f'./assets/cidades/{slug}.webp'
-        mobile = f'./assets/cidades/{slug}-mobile.webp'
-        display_title = {
-            'tiangua': 'Nuvens sobre a serra',
-            'ubajara': 'Parque Nacional de Ubajara',
-            'vicosa-do-ceara': 'Os caminhos da Ibiapaba',
-            'frecheirinha': 'Igreja Matriz',
-            'reriutaba': 'Entre caminhos e serra',
-            'pacuja': 'Sítio Floresta',
-        }.get(slug, p['title'])
+        image = f'./assets/cidades/{slug}.webp?v=2'
+        mobile = f'./assets/cidades/{slug}-mobile.webp?v=2'
+        display_title = p.get('displayTitle', p['title'])
         city, title = escape(p['city']), escape(display_title)
         caption = escape(f"{p['city']} · {display_title} · Fotografia: {p['author']} · {p['license']}")
         # Very wide panoramas need the larger file for a crisp, cropped mobile image.
-        sizes = '(max-width: 767px) 90vw, 72vw' if p['width'] / p['height'] < 2 else '180vw'
+        sizes = '(max-width: 599px) 90vw, (max-width: 1023px) 72vw, 60vw' if p['width'] / p['height'] < 2 else '180vw'
         source_set = f'{mobile} {p["mobileWidth"]}w, {image} {p["width"]}w' if p['mobileWidth'] < p['width'] else image
         full_image = ' data-full-image="true"' if p.get('preserveFullImage') else ''
         cards.append(f'''        <figure class="landscape-card" data-city="{slug}"{full_image}>

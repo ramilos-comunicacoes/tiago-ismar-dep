@@ -1,7 +1,8 @@
 {
   "source": "tiago-real-contato.webp; original LIC04470.JPG supplied by owner",
-  "method": "Original photograph displayed through a luminance mask generated with built-in image_gen; CSS composition only. Generated portrait was rejected and is not published.",
-  "mask": "tiago-cutout-mask.webp",
+  "method": "Original photograph displayed through an extraction mask generated with built-in image_gen; CSS composition only. Generated portrait was rejected and is not published. The existing mask luminance was encoded into a PNG alpha channel for consistent mobile rendering; the original photograph and mask geometry are unchanged.",
+  "mask": "tiago-cutout-alpha.png",
+  "sourceMask": "tiago-cutout-mask.webp",
   "prompt": "Create ONLY a precise black-and-white alpha segmentation mask for the attached source photograph. Exact original framing, solid white person silhouette, solid black background. Do not zoom, move or reframe.",
   "faceRetouching": false,
   "faceGeneration": false

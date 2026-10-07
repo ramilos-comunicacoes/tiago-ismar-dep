@@ -186,9 +186,7 @@
   const cloneCards = [];
   let activeGalleryIndex = -1;
   let galleryVisible = false;
-  let galleryHovered = false;
   let galleryInputMode = 'pointer';
-  let galleryWindowFocused = true;
   let galleryPointerActive = false;
   let galleryTransitioning = false;
   let galleryResumeAt = 0;
@@ -289,8 +287,8 @@
   }
 
   function canGalleryPlay() {
-    return cards.length > 1 && galleryVisible && !document.hidden && galleryWindowFocused && !motionPaused
-      && !galleryHovered && !hasGalleryKeyboardFocus() && !galleryPointerActive && !photoDialog?.open;
+    return cards.length > 1 && galleryVisible && !document.hidden && !motionPaused
+      && !hasGalleryKeyboardFocus() && !galleryPointerActive && !photoDialog?.open;
   }
 
   function syncGalleryPlayback() {
@@ -431,16 +429,7 @@
     event.preventDefault();
     moveGallery(event.key === 'ArrowRight' ? 1 : -1, { focusCard: event.target !== track });
   });
-  track?.addEventListener('pointerenter', (event) => {
-    if (event.pointerType !== 'mouse') return;
-    galleryHovered = true;
-    syncGalleryPlayback();
-  });
-  track?.addEventListener('pointerleave', (event) => {
-    if (event.pointerType !== 'mouse') return;
-    galleryHovered = false;
-    rememberGalleryInteraction();
-  });
+  // A resting mouse must not stop autoplay; only an active gesture or keyboard focus does.
   galleryRegion?.addEventListener('pointerdown', () => {
     galleryPointerActive = true;
     rememberGalleryInteraction();
@@ -473,19 +462,11 @@
   track?.addEventListener('wheel', rememberGalleryInteraction, { passive: true });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) galleryPointerActive = false;
-    galleryHovered = !document.hidden && window.matchMedia('(hover: hover)').matches
-      && Boolean(track?.matches(':hover'));
     syncGalleryPlayback();
   });
-  window.addEventListener('blur', () => {
-    galleryWindowFocused = false;
-    galleryPointerActive = false;
-    clearGalleryAutoTimer();
-  });
-  window.addEventListener('focus', () => {
-    galleryWindowFocused = true;
-    rememberGalleryInteraction();
-  });
+  // Window blur may only move focus to browser controls while the page remains visible.
+  // Release an interrupted drag, but let document visibility control background playback.
+  window.addEventListener('blur', releaseGalleryPointer);
   if (track && 'IntersectionObserver' in window) {
     const galleryObserver = new IntersectionObserver((entries) => {
       setGalleryVisibility(entries[0].isIntersecting && entries[0].intersectionRatio >= 0.15);

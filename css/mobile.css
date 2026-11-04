@@ -125,6 +125,29 @@ section { scroll-margin-top:0; }
 .photo-dialog>img { max-height:64svh; min-height:0; }
 .photo-dialog>p { padding-top:16px; text-align:left; overflow-wrap:anywhere; }
 
+/* The trade directory stays in the page flow, including long business names. */
+.partners-section { padding-block:var(--section-space); scroll-margin-top:0; }
+.partners-heading { gap:20px; padding-bottom:24px; }
+.partners-heading h2 { font-size:clamp(43px,11.6vw,72px); }
+.partners-intro { font-size:15px; }
+.partner-tools { margin-top:24px; }
+.partner-search-row { flex-wrap:wrap; }
+.partner-search-row input { flex-basis:200px; }
+.partner-list { margin-top:12px; }
+.partner-list>li { min-height:62px; padding-block:16px; }
+.partners-invite { margin-top:28px; padding:24px 20px; gap:22px; }
+.partners-invite h3 { font-size:38px; }
+.partners-invite p:not(.eyebrow) { font-size:15px; }
+.partners-cta { min-height:56px; font-size:16px; }
+@media (min-width:600px) {
+  .partner-list { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .partners-invite { padding:28px; }
+}
+@media (min-width:600px) and (max-height:600px) {
+  .partners-heading h2 { font-size:48px; }
+  .partners-heading { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; align-items:end; }
+}
+
 /* Deliberate feedback on touch; no hover-dependent features. */
 @media (hover:none) {
   .hero-cta:active,.hero-secondary:active,.contact-links>a:active,.gallery-controls button:active { transform:scale(.98); }

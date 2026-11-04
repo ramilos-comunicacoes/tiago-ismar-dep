@@ -99,6 +99,67 @@
     });
   }
 
+  // The source directory is static HTML; search is an optional enhancement.
+  const partnerSearch = document.querySelector('#partner-search');
+  const partnerClear = document.querySelector('#partner-clear');
+  const partnerStatus = document.querySelector('#partner-status');
+  const partnerEmpty = document.querySelector('.partner-empty');
+  const partnerEntries = [...document.querySelectorAll('#partner-list>li')];
+  if (partnerSearch && partnerClear && partnerStatus && partnerEmpty && partnerEntries.length) {
+    const normalizePartner = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, ' ').trim();
+    const searchablePartners = partnerEntries.map((element) => ({ element, name: normalizePartner(element.textContent) }));
+    function filterPartners() {
+      const terms = normalizePartner(partnerSearch.value).split(' ').filter(Boolean);
+      let matches = 0;
+      searchablePartners.forEach(({ element, name }) => {
+        const visible = terms.every((term) => name.includes(term));
+        element.hidden = !visible;
+        if (visible) matches++;
+      });
+      partnerClear.hidden = !partnerSearch.value;
+      partnerEmpty.hidden = matches > 0;
+      partnerStatus.textContent = terms.length
+        ? `${matches} ${matches === 1 ? 'empreendimento encontrado' : 'empreendimentos encontrados'}.`
+        : 'Lista em ordem alfabética.';
+    }
+    document.querySelector('.partner-tools').hidden = false;
+    partnerSearch.addEventListener('input', filterPartners);
+    partnerSearch.addEventListener('search', filterPartners);
+    partnerClear.addEventListener('click', () => {
+      partnerSearch.value = '';
+      filterPartners();
+      partnerSearch.focus();
+    });
+    filterPartners();
+  }
+
+  // Only the composed message is submitted, using WhatsApp's standard click-to-chat URL.
+  const partnerForm = document.querySelector('.partner-form');
+  const partnerMessage = document.querySelector('#partner-message');
+  const participantFields = ['participant-name', 'participant-company', 'participant-location']
+    .map((id) => document.getElementById(id));
+  if (partnerForm && partnerMessage && participantFields.every(Boolean)) {
+    partnerForm.hidden = false;
+    document.querySelector('.partner-fallback')?.setAttribute('hidden', '');
+    participantFields.forEach((field) => {
+      field.addEventListener('input', () => {
+        field.setCustomValidity(field.value && !field.value.trim() ? 'Preencha este campo.' : '');
+      });
+    });
+    partnerForm.addEventListener('submit', (event) => {
+      const values = participantFields.map((field) => field.value.trim().replace(/\s+/g, ' '));
+      const emptyIndex = values.findIndex((value) => !value);
+      if (emptyIndex !== -1) {
+        event.preventDefault();
+        participantFields[emptyIndex].setCustomValidity('Preencha este campo.');
+        partnerForm.reportValidity();
+        return;
+      }
+      const [name, company, location] = values;
+      partnerMessage.value = `Olá, Tiago! Quero participar da mesa redonda do trade turístico de Tianguá.\n\nMeu nome: ${name}\nEmpresa: ${company}\nLocal do empreendimento: ${location}\n\nVamos conversar sobre os desafios e as soluções para o turismo da nossa cidade!`;
+    });
+  }
+
   // Reveal once. Without JavaScript, the page keeps its normal visible state.
   let revealObserver;
   if ('IntersectionObserver' in window) {

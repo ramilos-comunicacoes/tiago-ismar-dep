@@ -24,11 +24,11 @@
   <link rel="preload" href="./assets/fonts/manrope-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./css/fonts.css?v=4">
   <link rel="preload" href="./assets/tiago-cutout-alpha.png" as="image" type="image/png">
-  <link rel="stylesheet" href="./css/styles.css?v=8">
+  <link rel="stylesheet" href="./css/styles.css?v=9">
   <link rel="stylesheet" href="./css/motion.css?v=6">
   <link rel="stylesheet" href="./css/hero.css?v=8">
-  <link rel="stylesheet" href="./css/mobile.css?v=3" media="(max-width: 1023px)">
-  <script src="./js/main.js?v=7" defer></script>
+  <link rel="stylesheet" href="./css/mobile.css?v=4" media="(max-width: 1023px)">
+  <script src="./js/main.js?v=8" defer></script>
   <title>Tiago Ismar — Um olhar daqui</title>
 </head>
 <body>
@@ -36,7 +36,7 @@
   <header class="site-header">
     <a class="brand" href="#inicio" aria-label="Tiago Ismar, início"><img class="brand-logo" src="./assets/brand/tiago-ismar-logo-light.svg?v=7" alt="" width="588" height="124"></a>
     <button class="menu-toggle" aria-controls="main-nav" aria-expanded="false" type="button"><span>Menu</span><span class="menu-bars" aria-hidden="true"></span></button>
-    <nav id="main-nav" class="main-nav" aria-label="Navegação principal"><a href="#tiago">O Tiago</a><a href="#serra">A serra</a><a href="#olhares">Outros olhares</a><a class="nav-contact" href="#contato">Vamos conversar <span aria-hidden="true"><svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg></span></a></nav>
+    <nav id="main-nav" class="main-nav" aria-label="Navegação principal"><a href="#tiago">O Tiago</a><a href="#serra">A serra</a><a href="#olhares">Outros olhares</a><a href="#parceiros">Parceiros</a><a class="nav-contact" href="#contato">Vamos conversar <span aria-hidden="true"><svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg></span></a></nav>
     <div class="reading-progress" aria-hidden="true"></div>
   </header>
   <main id="conteudo">
@@ -192,6 +192,103 @@
         </figure>
       </div>
       <div class="gallery-footer shell"><p class="gallery-hint"><span aria-hidden="true"><svg class="icon lucide lucide-move-horizontal" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#move-horizontal"></use></svg></span> Toque na fotografia para ampliar.</p><div class="gallery-controls"><button type="button" data-gallery-prev aria-label="Fotografia anterior"><svg class="icon lucide lucide-arrow-left" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-left"></use></svg></button><button type="button" data-gallery-next aria-label="Próxima fotografia"><svg class="icon lucide lucide-arrow-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-right"></use></svg></button></div></div>
+    </section>
+    <section class="partners-section" id="parceiros" aria-labelledby="partners-title">
+      <div class="shell partners-shell">
+        <div class="partners-heading">
+          <div>
+            <p class="eyebrow">UMA CONVERSA PELA NOSSA CIDADE</p>
+            <h2 id="partners-title">Parceiros do trade turístico <span>de Tianguá.</span></h2>
+          </div>
+          <p class="partners-intro">Uma mesa redonda para ouvir quem faz o turismo acontecer e pensar, juntos, nos próximos passos da nossa cidade.</p>
+        </div>
+        <div class="partner-tools" hidden>
+          <label for="partner-search">Encontre seu empreendimento</label>
+          <div class="partner-search-row">
+            <input id="partner-search" type="search" placeholder="Digite o nome" autocomplete="off" aria-controls="partner-list" spellcheck="false">
+            <button type="button" id="partner-clear" hidden>Limpar</button>
+          </div>
+          <p id="partner-status" role="status" aria-live="polite" aria-atomic="true">Lista em ordem alfabética.</p>
+        </div>
+        <ul class="partner-list" id="partner-list" aria-label="Empreendimentos do trade turístico de Tianguá">
+          <li>Alow Pizza Tianguá</li>
+          <li>Bambu Pizzas &amp; Esfihas</li>
+          <li>Belle Vue Mirante</li>
+          <li>Casa da Maia Hostel</li>
+          <li>Cascata Hotel Tur</li>
+          <li>Dunamis</li>
+          <li>Espaço Roots Camping</li>
+          <li>Gean Hotel</li>
+          <li>Gibão Restaurante</li>
+          <li>Hotel Ibiapaba</li>
+          <li>Hotel L&#x27;Équipe Prime</li>
+          <li>Italien Pizzeria e Cucina</li>
+          <li>Lapa Ecoturismo / Lapa Ecopark</li>
+          <li>Lavoro Pizzaria</li>
+          <li>Massa and Burger</li>
+          <li>Merci Bistrot</li>
+          <li>Moto Fest Tianguá Ltda.</li>
+          <li>Muda Hotel</li>
+          <li>Oba! Pizza Express</li>
+          <li>Parque Ecológico Cachoeiras do Pinga</li>
+          <li>Pousada Betel</li>
+          <li>Pousada Padre Cícero - Tianguá</li>
+          <li>Pousada Ramilos</li>
+          <li>Pousada Serra Bella</li>
+          <li>Pousada Vasconcelos Tianguá</li>
+          <li>Prainha do Jet</li>
+          <li>Premibeer</li>
+          <li>Reserva Natureza Divina</li>
+          <li>Restaurante Cachoeiras do Pinga</li>
+          <li>Restaurante Cavalcante</li>
+          <li>Restaurante da Reserva Natureza Divina</li>
+          <li>Restaurante do Sítio do Bosco</li>
+          <li>Restaurante Fogão a Lenha Tianguá</li>
+          <li>Restaurante Lapa Ecoturismo</li>
+          <li>Restaurante Manacá da Serra</li>
+          <li>Restaurante Panela de Barro</li>
+          <li>Serra Grande Hotel</li>
+          <li>Seu Boteco Tianguá</li>
+          <li>Sinhá Eco Pousada Hotel</li>
+          <li>Sítio do Bosco Park</li>
+          <li>Trapiche Restaurante e Bistrô</li>
+          <li>Villa Suíça Ibiapaba</li>
+          <li>VISO Hotel</li>
+          <li>YAMMY Pizza</li>
+        </ul>
+        <p class="partner-empty" hidden>Nenhum empreendimento encontrado com esse nome. Você também pode participar pelo botão abaixo.</p>
+        <div class="partners-invite">
+          <div>
+            <p class="eyebrow">SEU EMPREENDIMENTO NÃO ESTÁ NA LISTA?</p>
+            <h3>Tem lugar para você.</h3>
+            <p>Vamos colocar à mesa nossos desafios, nossas ideias e as possíveis soluções para o turismo de Tianguá.</p>
+          </div>
+          <form class="partner-form" action="https://wa.me/5588992410722" method="get" target="_blank" rel="noopener noreferrer" aria-label="Participar da mesa redonda" hidden>
+            <input type="hidden" name="text" id="partner-message">
+            <div class="partner-field">
+              <label for="participant-name">Seu nome</label>
+              <input id="participant-name" type="text" autocomplete="name" maxlength="100" placeholder="Como você se chama?" required>
+            </div>
+            <div class="partner-field">
+              <label for="participant-company">Nome da empresa</label>
+              <input id="participant-company" type="text" autocomplete="organization" maxlength="140" placeholder="Nome do empreendimento" required>
+            </div>
+            <div class="partner-field">
+              <label for="participant-location">Local do empreendimento</label>
+              <input id="participant-location" type="text" maxlength="160" placeholder="Bairro e cidade" required>
+            </div>
+            <button class="partners-cta" type="submit">
+              <span>Quero participar</span>
+              <svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg>
+            </button>
+            <p class="partner-form-note">Você poderá revisar a mensagem no WhatsApp antes de enviar.</p>
+          </form>
+          <a class="partners-cta partner-fallback" href="https://wa.me/5588992410722?text=Ol%C3%A1%2C%20Tiago%21%20Vi%20o%20convite%20no%20seu%20site%20e%20quero%20participar%20da%20mesa%20redonda%20do%20trade%20tur%C3%ADstico%20de%20Tiangu%C3%A1.%0A%0AMeu%20nome%3A%0AMeu%20empreendimento%3A%0ALocal%20do%20empreendimento%3A" target="_blank" rel="noopener noreferrer" aria-label="Quero participar: conversar com Tiago pelo WhatsApp">
+            <span>Quero participar</span>
+            <svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg>
+          </a>
+        </div>
+      </div>
     </section>
     <section class="contact-section" data-scroll-scene id="contato" aria-labelledby="contact-title"><div class="shell contact-grid"><div class="contact-main"><h2 class="display" id="contact-title" data-reveal><span>A GENTE</span> <span>SE ENCONTRA<span class="lime">.</span></span></h2><p class="contact-copy" data-reveal>Uma mensagem. Uma ideia. Um novo assunto.</p><div class="contact-links"><a href="https://instagram.com/tiagoismar" target="_blank" rel="noopener noreferrer"><span><small>ME ACOMPANHE</small>Instagram</span><span class="contact-arrow" aria-hidden="true"><svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg></span></a><a href="https://chat.whatsapp.com/FBN2xU7T8hKIobXfv6KmLA" target="_blank" rel="noopener noreferrer"><span><small>ENTRE NA COMUNIDADE</small>WhatsApp</span><span class="contact-arrow" aria-hidden="true"><svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg></span></a></div></div><figure class="contact-collage" data-reveal>
         <div class="collage-sun" aria-hidden="true"></div>

@@ -1,0 +1,233 @@
+{
+  "partners": [
+    {
+      "title": "Alow Pizza Tianguá",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Bambu Pizzas & Esfihas",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Belle Vue Mirante",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Casa da Maia Hostel",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Cascata Hotel Tur",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Dunamis",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Espaço Roots Camping",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Gean Hotel",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Gibão Restaurante",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Hotel Ibiapaba",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Hotel L'Équipe Prime",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Italien Pizzeria e Cucina",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Lapa Ecoturismo / Lapa Ecopark",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Lavoro Pizzaria",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Massa and Burger",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Merci Bistrot",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Moto Fest Tianguá Ltda.",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Muda Hotel",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Oba! Pizza Express",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Parque Ecológico Cachoeiras do Pinga",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Pousada Betel",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Pousada Padre Cícero - Tianguá",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Pousada Ramilos",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Pousada Serra Bella",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Pousada Vasconcelos Tianguá",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Prainha do Jet",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Premibeer",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Reserva Natureza Divina",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante Cachoeiras do Pinga",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante Cavalcante",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante da Reserva Natureza Divina",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante do Sítio do Bosco",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante Fogão a Lenha Tianguá",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante Lapa Ecoturismo",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante Manacá da Serra",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Restaurante Panela de Barro",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Serra Grande Hotel",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Seu Boteco Tianguá",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Sinhá Eco Pousada Hotel",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Sítio do Bosco Park",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Trapiche Restaurante e Bistrô",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "Villa Suíça Ibiapaba",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "VISO Hotel",
+      "city": "Tianguá",
+      "published": true
+    },
+    {
+      "title": "YAMMY Pizza",
+      "city": "Tianguá",
+      "published": true
+    }
+  ],
+  "settings": {
+    "site_intro": "Tem um pouco da serra em tudo que me inspira.",
+    "contact_whatsapp": "5588992410722",
+    "companies_title": "Empresas da nossa serra",
+    "companies_intro": "Conheça os empreendimentos e encontre seus produtos e serviços.",
+    "events_intro": "Encontros, cultura e experiências para viver a Ibiapaba.",
+    "projects_intro": "Ideias e iniciativas para construir os próximos caminhos da nossa região.",
+    "catalog_url": "https://wa.me/c/558892410722"
+  }
+}

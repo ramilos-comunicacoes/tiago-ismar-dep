@@ -27,8 +27,10 @@
   <link rel="stylesheet" href="./css/styles.css?v=9">
   <link rel="stylesheet" href="./css/motion.css?v=6">
   <link rel="stylesheet" href="./css/hero.css?v=8">
-  <link rel="stylesheet" href="./css/mobile.css?v=4" media="(max-width: 1023px)">
-  <script src="./js/main.js?v=8" defer></script>
+  <link rel="stylesheet" href="./css/content.css?v=1">
+  <link rel="stylesheet" href="./css/mobile.css?v=5" media="(max-width: 1023px)">
+  <script src="./js/main.js?v=9" defer></script>
+  <script src="./js/content.js?v=1" defer></script>
   <title>Tiago Ismar — Um olhar daqui</title>
 </head>
 <body>
@@ -36,7 +38,7 @@
   <header class="site-header">
     <a class="brand" href="#inicio" aria-label="Tiago Ismar, início"><img class="brand-logo" src="./assets/brand/tiago-ismar-logo-light.svg?v=7" alt="" width="588" height="124"></a>
     <button class="menu-toggle" aria-controls="main-nav" aria-expanded="false" type="button"><span>Menu</span><span class="menu-bars" aria-hidden="true"></span></button>
-    <nav id="main-nav" class="main-nav" aria-label="Navegação principal"><a href="#tiago">O Tiago</a><a href="#serra">A serra</a><a href="#olhares">Outros olhares</a><a href="#parceiros">Parceiros</a><a class="nav-contact" href="#contato">Vamos conversar <span aria-hidden="true"><svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg></span></a></nav>
+    <nav id="main-nav" class="main-nav" aria-label="Navegação principal"><a href="#tiago">O Tiago</a><a href="#serra">A serra</a><a href="#olhares">Outros olhares</a><a href="#empresas">Empresas</a><a href="#eventos">Agenda da Ibiapaba</a><a href="#projetos">Projetos</a><a href="#parceiros">Parceiros</a><a class="nav-contact" href="#contato">Vamos conversar <span aria-hidden="true"><svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg></span></a></nav>
     <div class="reading-progress" aria-hidden="true"></div>
   </header>
   <main id="conteudo">
@@ -193,6 +195,24 @@
       </div>
       <div class="gallery-footer shell"><p class="gallery-hint"><span aria-hidden="true"><svg class="icon lucide lucide-move-horizontal" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#move-horizontal"></use></svg></span> Toque na fotografia para ampliar.</p><div class="gallery-controls"><button type="button" data-gallery-prev aria-label="Fotografia anterior"><svg class="icon lucide lucide-arrow-left" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-left"></use></svg></button><button type="button" data-gallery-next aria-label="Próxima fotografia"><svg class="icon lucide lucide-arrow-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-right"></use></svg></button></div></div>
     </section>
+    <section class="content-section companies-section" id="empresas" aria-labelledby="companies-title" data-collection="companies">
+      <div class="shell content-heading"><div><p class="eyebrow">GENTE QUE FAZ ACONTECER</p><h2 id="companies-title">Empresas.<br><span>De perto.</span></h2></div><p>Conheça os empreendimentos, explore seus catálogos e fale com quem está por trás de cada negócio.</p></div>
+      <div class="shell content-empty" data-content-empty><span class="content-empty-line" aria-hidden="true"></span><p>Estamos preparando este espaço com as empresas e seus catálogos. Em breve, você poderá explorar tudo por aqui.</p></div>
+      <div class="content-track" data-content-track role="region" aria-roledescription="carrossel" aria-label="Empresas e catálogos" tabindex="0" hidden></div>
+      <div class="shell content-controls" data-content-controls hidden><button type="button" data-content-prev aria-label="Empresa anterior"></button><button type="button" data-content-next aria-label="Próxima empresa"></button></div>
+    </section>
+    <section class="content-section events-section" id="eventos" aria-labelledby="events-title" data-collection="events">
+      <div class="shell content-heading"><div><p class="eyebrow">MARQUE ESSE ENCONTRO</p><h2 id="events-title">Agenda<br><span>da Ibiapaba.</span></h2></div><p>Encontros, cultura e experiências pela serra. Veja o que vem por aí e escolha seu próximo destino.</p></div>
+      <div class="shell content-empty" data-content-empty><span class="content-empty-line" aria-hidden="true"></span><p>Novos encontros estão a caminho. A programação aparece aqui assim que os eventos forem confirmados.</p></div>
+      <div class="content-track" data-content-track role="region" aria-roledescription="carrossel" aria-label="Eventos da Ibiapaba" tabindex="0" hidden></div>
+      <div class="shell content-controls" data-content-controls hidden><button type="button" data-content-prev aria-label="Evento anterior"></button><button type="button" data-content-next aria-label="Próximo evento"></button></div>
+    </section>
+    <section class="content-section projects-section" id="projetos" aria-labelledby="projects-title" data-collection="projects">
+      <div class="shell content-heading"><div><p class="eyebrow">IDEIAS QUE ENCONTRAM CAMINHO</p><h2 id="projects-title">Projetos<br><span>para a serra.</span></h2></div><p>Acompanhe iniciativas para a Ibiapaba, conheça as propostas e veja cada passo dessa construção.</p></div>
+      <div class="shell content-empty" data-content-empty><span class="content-empty-line" aria-hidden="true"></span><p>As iniciativas serão apresentadas aqui com seus objetivos e andamento. Volte para acompanhar.</p></div>
+      <div class="content-track" data-content-track role="region" aria-roledescription="carrossel" aria-label="Projetos para a Ibiapaba" tabindex="0" hidden></div>
+      <div class="shell content-controls" data-content-controls hidden><button type="button" data-content-prev aria-label="Projeto anterior"></button><button type="button" data-content-next aria-label="Próximo projeto"></button></div>
+    </section>
     <section class="partners-section" id="parceiros" aria-labelledby="partners-title">
       <div class="shell partners-shell">
         <div class="partners-heading">
@@ -203,65 +223,23 @@
           <p class="partners-intro">Uma mesa redonda para ouvir quem faz o turismo acontecer e pensar, juntos, nos próximos passos da nossa cidade.</p>
         </div>
         <div class="partner-tools" hidden>
+          <div class="partner-city-field" hidden><label for="partner-city">Escolha a cidade</label><select id="partner-city" aria-controls="partner-list"><option value="Tianguá">Tianguá</option></select></div>
           <label for="partner-search">Encontre seu empreendimento</label>
           <div class="partner-search-row">
             <input id="partner-search" type="search" placeholder="Digite o nome" autocomplete="off" aria-controls="partner-list" spellcheck="false">
             <button type="button" id="partner-clear" hidden>Limpar</button>
           </div>
-          <p id="partner-status" role="status" aria-live="polite" aria-atomic="true">Lista em ordem alfabética.</p>
+          <p id="partner-status" role="status" aria-live="polite" aria-atomic="true">Carregando lista…</p>
+          <button id="content-retry" class="content-retry" type="button" hidden>Tentar novamente</button>
         </div>
-        <ul class="partner-list" id="partner-list" aria-label="Empreendimentos do trade turístico de Tianguá">
-          <li>Alow Pizza Tianguá</li>
-          <li>Bambu Pizzas &amp; Esfihas</li>
-          <li>Belle Vue Mirante</li>
-          <li>Casa da Maia Hostel</li>
-          <li>Cascata Hotel Tur</li>
-          <li>Dunamis</li>
-          <li>Espaço Roots Camping</li>
-          <li>Gean Hotel</li>
-          <li>Gibão Restaurante</li>
-          <li>Hotel Ibiapaba</li>
-          <li>Hotel L&#x27;Équipe Prime</li>
-          <li>Italien Pizzeria e Cucina</li>
-          <li>Lapa Ecoturismo / Lapa Ecopark</li>
-          <li>Lavoro Pizzaria</li>
-          <li>Massa and Burger</li>
-          <li>Merci Bistrot</li>
-          <li>Moto Fest Tianguá Ltda.</li>
-          <li>Muda Hotel</li>
-          <li>Oba! Pizza Express</li>
-          <li>Parque Ecológico Cachoeiras do Pinga</li>
-          <li>Pousada Betel</li>
-          <li>Pousada Padre Cícero - Tianguá</li>
-          <li>Pousada Ramilos</li>
-          <li>Pousada Serra Bella</li>
-          <li>Pousada Vasconcelos Tianguá</li>
-          <li>Prainha do Jet</li>
-          <li>Premibeer</li>
-          <li>Reserva Natureza Divina</li>
-          <li>Restaurante Cachoeiras do Pinga</li>
-          <li>Restaurante Cavalcante</li>
-          <li>Restaurante da Reserva Natureza Divina</li>
-          <li>Restaurante do Sítio do Bosco</li>
-          <li>Restaurante Fogão a Lenha Tianguá</li>
-          <li>Restaurante Lapa Ecoturismo</li>
-          <li>Restaurante Manacá da Serra</li>
-          <li>Restaurante Panela de Barro</li>
-          <li>Serra Grande Hotel</li>
-          <li>Seu Boteco Tianguá</li>
-          <li>Sinhá Eco Pousada Hotel</li>
-          <li>Sítio do Bosco Park</li>
-          <li>Trapiche Restaurante e Bistrô</li>
-          <li>Villa Suíça Ibiapaba</li>
-          <li>VISO Hotel</li>
-          <li>YAMMY Pizza</li>
-        </ul>
+        <ul class="partner-list" id="partner-list" aria-label="Empreendimentos do trade turístico"></ul>
+        <noscript><p class="partner-noscript">Ative o JavaScript para consultar a lista atualizada de parceiros ou use o botão “Quero participar” abaixo para falar pelo WhatsApp.</p></noscript>
         <p class="partner-empty" hidden>Nenhum empreendimento encontrado com esse nome. Você também pode participar pelo botão abaixo.</p>
         <div class="partners-invite">
           <div>
             <p class="eyebrow">SEU EMPREENDIMENTO NÃO ESTÁ NA LISTA?</p>
             <h3>Tem lugar para você.</h3>
-            <p>Vamos colocar à mesa nossos desafios, nossas ideias e as possíveis soluções para o turismo de Tianguá.</p>
+            <p data-partner-invite>Vamos colocar à mesa nossos desafios, nossas ideias e as possíveis soluções para o turismo de Tianguá.</p>
           </div>
           <form class="partner-form" action="https://wa.me/5588992410722" method="get" target="_blank" rel="noopener noreferrer" aria-label="Participar da mesa redonda" hidden>
             <input type="hidden" name="text" id="partner-message">
@@ -299,5 +277,6 @@
   </main>
   <footer class="site-footer"><div class="shell footer-top"><a class="brand" href="#inicio" aria-label="Tiago Ismar, voltar ao início"><img class="brand-logo" src="./assets/brand/tiago-ismar-logo-light.svg?v=7" alt="" width="588" height="124"></a><span>DA IBIAPABA. DE PERTO.</span><a href="#inicio" class="back-top">Voltar ao topo <span aria-hidden="true"><svg class="icon lucide lucide-arrow-up" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up"></use></svg></span></a></div><div class="shell footer-bottom"><span>© <span id="year">2026</span> Tiago Ismar</span><details class="image-credits"><summary>Créditos das imagens <span aria-hidden="true"><svg class="icon lucide lucide-plus" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#plus"></use></svg></span></summary><div id="credits-content"><p><a href="https://commons.wikimedia.org/wiki/File:Nevasca_no_Cear%C3%A1.JPG" target="_blank" rel="noopener noreferrer">Tianguá — Nuvens sobre a serra</a>. Moacir Ximenes · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Mirante_do_Parque_Nacional_de_Ubajara.jpg" target="_blank" rel="noopener noreferrer">Ubajara — Mirante do teleférico</a>. AlexCarvalho82 · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Vi%C3%A7osa_Cear%C3%A1_10.jpg" target="_blank" rel="noopener noreferrer">Viçosa do Ceará — Igreja do Céu</a>. Adrian Michael · <a href="https://creativecommons.org/licenses/by/4.0" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:As_predra_grande.jpg" target="_blank" rel="noopener noreferrer">Guaraciaba do Norte — Formações rochosas</a>. Descobertaceara · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Santu%C3%A1rio_de_F%C3%A1tima_-_Serra_Grande.jpg" target="_blank" rel="noopener noreferrer">São Benedito — Santuário de Fátima</a>. Brenno 019 · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Ibiapina.jpg" target="_blank" rel="noopener noreferrer">Ibiapina — A serra entre nuvens</a>. Roney Souza · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p><p><a href="https://williammorrisdavis.uvanet.br/index.php/revistageomorfologia/article/view/288" target="_blank" rel="noopener noreferrer">Croatá — O relevo de Croatá</a>. Bruna Lima Carvalho · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p><p><a href="https://www.repositorio.editorasertaocult.com.br/index.php/omp/catalog/book/41" target="_blank" rel="noopener noreferrer">Carnaubal — Cachoeira Park: marcas do tempo</a>. Maria Somália Sales Viana · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Bica_do_Ipu_-_panoramio_(16).jpg" target="_blank" rel="noopener noreferrer">Ipu — Bica do Ipu</a>. MACÍLIO GOMES · <a href="https://creativecommons.org/licenses/by/3.0" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Igreja_Matriz_de_Ipueiras.JPG" target="_blank" rel="noopener noreferrer">Ipueiras — Igreja Matriz</a>. Renato · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Copernicia_prunifera_-_Paulo_Nogueira_-_718993639.jpeg" target="_blank" rel="noopener noreferrer">Mucambo — Pôr do sol entre carnaúbas</a>. Paulo Nogueira · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Igreja_matriz_frecheirinha.JPG" target="_blank" rel="noopener noreferrer">Frecheirinha — Igreja Matriz</a>. Derbsonfrota · <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>.</p><p><a href="https://agenciaeconordeste.com.br/agroecologia/agricultores-familiares-sao-estimulados-na-convivencia-com-o-semiarido/" target="_blank" rel="noopener noreferrer">Graça — Comunidade Rural de Corredor</a>. Iago Barreto / Eco Nordeste · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-ND 4.0</a>.</p><p><a href="https://www.repositorio.editorasertaocult.com.br/index.php/omp/catalog/book/41" target="_blank" rel="noopener noreferrer">Pacujá — Sítio Floresta</a>. Maria Somália Sales Viana · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC-SA 4.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Reriutaba_-_State_of_Cear%C3%A1,_Brazil_-_panoramio_(24).jpg" target="_blank" rel="noopener noreferrer">Reriutaba — Entre caminhos e serra</a>. cicerobrunob@gmail.c… · <a href="https://creativecommons.org/licenses/by-sa/3.0" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>.</p><p><a href="https://commons.wikimedia.org/wiki/File:Bica_Encantada_panorama.jpg" target="_blank" rel="noopener noreferrer">Pires Ferreira — Cachoeira Encantada</a>. FRANCISCO FELIPE FARIAS DA SILVA · <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>.</p><p>Fotografias otimizadas para a web. Imagens sob licença sem derivações são exibidas integralmente, sem filtros ou cortes. As demais podem receber recorte responsivo e mantêm a licença indicada no crédito. Retratos de Tiago Ismar fornecidos pelo seu acervo; a composição usa a fotografia original com máscara de recorte, sem geração ou retoque de rosto.</p></div></details><span class="footer-location">CEARÁ, BRASIL <svg class="icon lucide lucide-arrow-up-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#arrow-up-right"></use></svg></span></div></footer>
   <dialog id="photo-dialog" class="photo-dialog" aria-label="Fotografia ampliada da Ibiapaba"><button type="button" data-dialog-close aria-label="Fechar fotografia">Fechar <span aria-hidden="true"><svg class="icon lucide lucide-x" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><use href="./assets/icons/lucide.svg?v=1#x"></use></svg></span></button><img data-dialog-image alt=""><p data-dialog-caption></p></dialog>
+  <dialog id="content-dialog" class="content-dialog" aria-labelledby="content-dialog-title"><div class="content-dialog-bar"><button type="button" data-content-close>Fechar <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./assets/icons/lucide.svg?v=1#x"></use></svg></button></div><div class="content-dialog-body" data-content-detail></div></dialog>
 </body>
 </html>

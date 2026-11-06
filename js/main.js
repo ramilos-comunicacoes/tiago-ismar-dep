@@ -94,37 +94,57 @@
       }
     });
 
-    window.matchMedia('(min-width: 1024px)').addEventListener('change', (event) => {
-      if (event.matches) closeMenu();
-    });
+    // The compact menu is used at every width so all eight destinations stay reachable.
   }
 
-  // The source directory is static HTML; search is an optional enhancement.
+  // Partner records are loaded from the CMS; never resurrect removed records from HTML.
   const partnerSearch = document.querySelector('#partner-search');
   const partnerClear = document.querySelector('#partner-clear');
   const partnerStatus = document.querySelector('#partner-status');
   const partnerEmpty = document.querySelector('.partner-empty');
-  const partnerEntries = [...document.querySelectorAll('#partner-list>li')];
-  if (partnerSearch && partnerClear && partnerStatus && partnerEmpty && partnerEntries.length) {
+  const partnerCity = document.querySelector('#partner-city');
+  let partnerEntries = [...document.querySelectorAll('#partner-list>li')];
+  if (partnerSearch && partnerClear && partnerStatus && partnerEmpty) {
+    let partnersReady = false;
+    partnerSearch.disabled = true;
+    if (partnerCity) partnerCity.disabled = true;
     const normalizePartner = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, ' ').trim();
-    const searchablePartners = partnerEntries.map((element) => ({ element, name: normalizePartner(element.textContent) }));
+    let searchablePartners = partnerEntries.map((element) => ({ element, name: normalizePartner(element.textContent), city: element.dataset.city || 'Tianguá' }));
     function filterPartners() {
+      if (!partnersReady) return;
       const terms = normalizePartner(partnerSearch.value).split(' ').filter(Boolean);
       let matches = 0;
-      searchablePartners.forEach(({ element, name }) => {
-        const visible = terms.every((term) => name.includes(term));
+      const city = partnerCity?.value || '';
+      searchablePartners.forEach(({ element, name, city: entryCity }) => {
+        const visible = (!city || city === entryCity) && terms.every((term) => name.includes(term));
         element.hidden = !visible;
         if (visible) matches++;
       });
       partnerClear.hidden = !partnerSearch.value;
       partnerEmpty.hidden = matches > 0;
+      partnerEmpty.textContent = terms.length
+        ? 'Nenhum empreendimento encontrado com esse nome. Você também pode participar pelo botão abaixo.'
+        : 'Esta lista ainda não tem empreendimentos publicados. Você pode participar pelo botão abaixo.';
       partnerStatus.textContent = terms.length
         ? `${matches} ${matches === 1 ? 'empreendimento encontrado' : 'empreendimentos encontrados'}.`
-        : 'Lista em ordem alfabética.';
+        : matches ? 'Lista em ordem alfabética.' : 'Ainda não há empreendimentos publicados nesta lista.';
+      const cityLabel = city ? `de ${city}` : 'da Ibiapaba e região';
+      document.querySelector('#partners-title span').textContent = `${cityLabel}.`;
+      document.querySelector('[data-partner-invite]').textContent = `Vamos colocar à mesa nossos desafios, nossas ideias e as possíveis soluções para o turismo ${cityLabel}.`;
+      document.querySelector('#partner-list').setAttribute('aria-label', `Empreendimentos do trade turístico ${cityLabel}`);
     }
     document.querySelector('.partner-tools').hidden = false;
     partnerSearch.addEventListener('input', filterPartners);
     partnerSearch.addEventListener('search', filterPartners);
+    partnerCity?.addEventListener('change', filterPartners);
+    document.addEventListener('partners:updated', () => {
+      partnersReady = true;
+      partnerSearch.disabled = false;
+      if (partnerCity) partnerCity.disabled = false;
+      partnerEntries = [...document.querySelectorAll('#partner-list>li')];
+      searchablePartners = partnerEntries.map((element) => ({ element, name: normalizePartner(element.textContent), city: element.dataset.city || 'Tianguá' }));
+      filterPartners();
+    });
     partnerClear.addEventListener('click', () => {
       partnerSearch.value = '';
       filterPartners();
@@ -156,7 +176,8 @@
         return;
       }
       const [name, company, location] = values;
-      partnerMessage.value = `Olá, Tiago! Quero participar da mesa redonda do trade turístico de Tianguá.\n\nMeu nome: ${name}\nEmpresa: ${company}\nLocal do empreendimento: ${location}\n\nVamos conversar sobre os desafios e as soluções para o turismo da nossa cidade!`;
+      const cityLabel = partnerCity?.value ? `de ${partnerCity.value}` : 'da Ibiapaba';
+      partnerMessage.value = `Olá, Tiago! Quero participar da mesa redonda do trade turístico ${cityLabel}.\n\nMeu nome: ${name}\nEmpresa: ${company}\nLocal do empreendimento: ${location}\n\nVamos conversar sobre os desafios e as soluções para o turismo da nossa cidade!`;
     });
   }
 

@@ -1,0 +1,40 @@
+[Unit]
+Description=Tiago Ismar content administration
+After=network.target
+
+[Service]
+Type=simple
+User=tiago-admin
+Group=tiago-admin
+WorkingDirectory=/opt/tiago-admin/current
+Environment=TIAGO_DATA_DIR=/var/lib/tiago-admin
+Environment=TIAGO_SITE_DIR=/var/www/tiagoismar.com/current
+Environment=TIAGO_ADMIN_DIR=/opt/tiago-admin/current/admin
+Environment=TIAGO_PUBLIC_ORIGIN=https://tiagoismar.com
+Environment=TIAGO_TRUST_PROXY=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/tiago-admin/current/venv/bin/gunicorn --bind 127.0.0.1:4180 --workers 2 --threads 2 --timeout 30 --max-requests 1000 --max-requests-jitter 100 "server.app:create_app()"
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGQUIT
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/tiago-admin
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

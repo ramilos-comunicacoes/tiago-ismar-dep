@@ -7,6 +7,15 @@
   const collections = new Map();
   const catalog = [];
   let opener;
+  // Display only the brand panel from the owner's unchanged WhatsApp captures.
+  // Replacing an image in the CMS with a normal upload removes this presentation.
+  const catalogLogos = new Map([
+    ['/assets/companies/ramilos-comunicacoes-catalog.jpeg', '#000000'],
+    ['/assets/companies/ramilos-metalurgica-catalog.jpeg', '#125b7c'],
+    ['/assets/companies/pousadas-ramilos-catalog.jpeg', '#ffcb00'],
+    ['/assets/companies/lava-jato-ramilos-catalog.jpeg', '#125b7c'],
+    ['/assets/companies/ramilos-engenharia-catalog.jpeg', '#125b7c'],
+  ]);
 
   function element(tag, className, text) {
     const node = document.createElement(tag);
@@ -37,6 +46,27 @@
   function imageNode(value, title, className = '') {
     const src = publicURL(value, true);
     if (!src) return null;
+    const url = new URL(src);
+    if (url.origin === location.origin && catalogLogos.has(url.pathname)) {
+      const namespace = 'http://www.w3.org/2000/svg';
+      const frame = document.createElementNS(namespace, 'svg');
+      frame.setAttribute('class', `${className} catalog-source-logo`.trim());
+      frame.setAttribute('viewBox', '0 0 738 706');
+      frame.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      frame.setAttribute('focusable', 'false');
+      if (title) { frame.setAttribute('role', 'img'); frame.setAttribute('aria-label', title); }
+      else frame.setAttribute('aria-hidden', 'true');
+      frame.style.backgroundColor = catalogLogos.get(url.pathname);
+      // The nested viewport clips the phone controls even in letterboxed layouts.
+      const crop = document.createElementNS(namespace, 'svg');
+      crop.setAttribute('width', '738'); crop.setAttribute('height', '706');
+      crop.setAttribute('viewBox', '0 194 738 706'); crop.setAttribute('overflow', 'hidden');
+      const original = document.createElementNS(namespace, 'image');
+      original.setAttribute('href', src);
+      original.setAttribute('width', '738'); original.setAttribute('height', '1600');
+      crop.append(original); frame.append(crop);
+      return frame;
+    }
     const image = element('img', className);
     image.src = src;
     image.alt = title || '';
@@ -112,7 +142,9 @@
     if (kind === 'companies' && record.is_group) fact(facts, 'Empresa', 'Grupo Ramilos');
     if (facts.childElementCount) detail.append(facts);
     const actions = element('div', 'content-detail-actions');
-    const external = link(kind === 'events' ? 'Saiba mais sobre o evento' : 'Saiba mais', record.url);
+    const destination = publicURL(record.url);
+    const instagram = destination && ['instagram.com', 'www.instagram.com'].includes(new URL(destination).hostname);
+    const external = link(instagram ? 'Ver no Instagram' : kind === 'events' ? 'Saiba mais sobre o evento' : 'Saiba mais', destination);
     if (external) actions.append(external);
     const phone = typeof record.whatsapp === 'string' ? record.whatsapp.replace(/\D/g, '') : '';
     if (kind === 'companies' && /^\d{10,15}$/.test(phone)) {

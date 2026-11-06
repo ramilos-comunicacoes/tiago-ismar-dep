@@ -11,7 +11,8 @@ O site estático continua em `/var/www/tiagoismar.com/current`. O painel usa um 
 3. Obter a autorização específica para a instalação descrita abaixo.
 4. Preparar backend e painel com **esse mesmo SHA**. Criar o primeiro acesso, ativar o serviço e revisar a integração Nginx.
 5. Publicar a parte estática usando `scripts/deploy-release.py --commit SHA_COMPLETO`, já revisado. O publicador estático não publica `server/`, banco, `admin/` ou este material de operação.
-6. Verificar o domínio HTTPS, painel, dados, imagens e versão. Só então informar conclusão.
+6. Reiniciar somente `tiago-admin` após a troca da release estática e verificar novamente a saúde. O processo resolve o destino de `TIAGO_SITE_DIR` ao iniciar; esse reinício permite validar imagens contra a release nova. Não é necessária outra recarga de Nginx.
+7. Verificar o domínio HTTPS, painel, dados, imagens e versão. Só então informar conclusão.
 
 O painel não tem senha padrão. A conta do painel é independente de `root`/SSH. Senhas são digitadas interativamente no console por `getpass`; nunca entram em argumentos de comando, Git, arquivos de configuração ou mensagens.
 
@@ -27,6 +28,8 @@ getent passwd tiago-admin
 ```
 
 Se a porta estiver ocupada, identificar o processo e parar a instalação; não encerrar outro aplicativo. Se a conta já existir, conferir a finalidade e as permissões antes de reutilizar. Ler a configuração efetiva do vhost de `tiagoismar.com` para localizar o arquivo correto e verificar conflitos de `location`. Não adivinhar o nome do arquivo Nginx.
+
+Conferir também se `/opt/tiago-admin/current` já existe, inclusive como link quebrado, se a unidade `tiago-admin.service` já está instalada e se `/var/lib/tiago-admin` contém dados. Nesse caso, inspecionar o estado antes de decidir entre completar uma instalação parcial e realizar uma atualização; não repetir automaticamente os passos de primeira instalação.
 
 ## Preparar diretórios e dependências — após autorização
 
@@ -117,7 +120,7 @@ mv -Tf -- "/opt/tiago-admin/.current-$TIAGO_SHA" /opt/tiago-admin/current
 systemctl restart tiago-admin.service
 ```
 
-Se o arquivo temporário já existir, parar e inspecionar. Não repetir a sequência automaticamente. Publicar a parte estática do mesmo SHA depois de confirmar que a API está saudável. O publicador estático registra sua própria versão anterior em `/var/www/tiagoismar.com/previous-release.txt`.
+Se o arquivo temporário já existir, parar e inspecionar. Não repetir a sequência automaticamente. Publicar a parte estática do mesmo SHA depois de confirmar que a API está saudável. Reiniciar novamente somente `tiago-admin` após essa publicação, para resolver a nova raiz estática, e repetir a verificação de saúde. O publicador estático registra sua própria versão anterior em `/var/www/tiagoismar.com/previous-release.txt`.
 
 Um rollback precisa conferir **os dois destinos atuais** antes de trocar links. Ler o registro anterior do painel e o registro anterior estático, validar que as pastas ainda existem e confirmar a compatibilidade da API com o frontend. Trocar o link do painel para a release anterior por operação atômica, reiniciar somente `tiago-admin`, executar o rollback estático registrado e verificar HTTPS novamente. Conservar ambas as releases.
 

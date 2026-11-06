@@ -28,10 +28,10 @@ def configured(tmp_path):
     return app, password
 
 
-def login(app, password):
+def login(app, password, username="tiago"):
     client = app.test_client()
     csrf = client.get("/api/admin/session").json["csrf_token"]
-    reply = client.post("/api/admin/login", json={"username": "tiago", "password": password},
+    reply = client.post("/api/admin/login", json={"username": username, "password": password},
                         headers={"Origin": "http://localhost", "X-CSRF-Token": csrf})
     assert reply.status_code == 200, reply.json
     return client, {"Origin": "http://localhost", "X-CSRF-Token": reply.json["csrf_token"]}
@@ -273,16 +273,19 @@ def test_upload_reencodes_images_and_keeps_drafts_private(configured):
     assert client.get("/media/../../content.sqlite3").status_code == 404
 
 
-def test_rate_limit_and_password_reset_revoke_access(configured):
-    app, password = configured
-    client, headers = login(app, password)
-    upsert_admin(app, "tiago", secrets.token_urlsafe(24), replace=True)
+@pytest.mark.parametrize("username", ["owner", "owner+17@example.com"])
+def test_rate_limit_and_password_reset_revoke_access(configured, username):
+    app, _ = configured
+    password = secrets.token_urlsafe(24)
+    upsert_admin(app, username, password)
+    client, headers = login(app, password, username)
+    upsert_admin(app, username, secrets.token_urlsafe(24), replace=True)
     assert client.get("/api/admin/content").status_code == 401
     anonymous = app.test_client()
     token = anonymous.get("/api/admin/session").json["csrf_token"]
     for _ in range(7):
-        assert anonymous.post("/api/admin/login", json={"username": "tiago", "password": "bad"}, headers={"Origin": "http://localhost", "X-CSRF-Token": token}).status_code == 401
-    assert anonymous.post("/api/admin/login", json={"username": "tiago", "password": "bad"}, headers={"Origin": "http://localhost", "X-CSRF-Token": token}).status_code == 429
+        assert anonymous.post("/api/admin/login", json={"username": username, "password": "bad"}, headers={"Origin": "http://localhost", "X-CSRF-Token": token}).status_code == 401
+    assert anonymous.post("/api/admin/login", json={"username": username, "password": "bad"}, headers={"Origin": "http://localhost", "X-CSRF-Token": token}).status_code == 429
 
 
 def test_metrics_are_aggregate_and_exclude_admin_and_bots(configured):

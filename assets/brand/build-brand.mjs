@@ -8,13 +8,11 @@ import { createRequire } from 'node:module';
 const directory = dirname(fileURLToPath(import.meta.url));
 const outlines = JSON.parse(await readFile(join(directory, 'wordmark-outlines.json'), 'utf8'));
 const colors = { forest: '#13231b', paper: '#eeeee5', lime: '#d5eb64' };
-// V5: the Ibiapaba landscape is the symbol: a broad plateau, steep escarpment
-// and a lower foreground ridge separated by an open valley.
-// The asymmetrical silhouette is an original interpretation, not a map or a
-// tracing of the reference photograph. All negative space stays transparent.
-const mark = 'M8 40C9 26 19 18 33 18C43 18 48 21 59 19C67 17 73 17 79 20C83 22 84 28 85 34L89 51C93 65 101 75 112 80V93C94 87 80 74 64 70C48 66 34 75 8 81Z M8 95C27 92 44 79 59 78C75 76 88 93 112 103H8Z';
+// The plateau makes the top of the T; its escarpment descends to the right.
+// A second ridge leaves a clear valley so the T reads at favicon size.
+const mark = 'M9 49C14 33 26 24 43 24H70C83 24 89 35 95 46L108 67C96 63 88 56 82 49L76 42H68V87L50 99V42H41C29 42 20 44 9 49Z M74 77L87 69C96 75 104 77 113 80V92C102 89 93 85 86 81L74 89Z';
 const svg = (viewBox, body, title = 'Tiago Ismar') => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="${title}"><title>${title}</title>${body}</svg>\n`;
-const symbol = (color) => svg('0 0 120 120', `<path fill="${color}" d="${mark}"/>`, 'Serra da Ibiapaba — símbolo de Tiago Ismar');
+const symbol = (color) => svg('0 0 120 120', `<path fill="${color}" d="${mark}"/>`, 'T da Ibiapaba — símbolo de Tiago Ismar');
 const lockup = (symbolColor, textColor) => svg('0 0 588 124', `<path fill="${symbolColor}" d="${mark}" transform="translate(5 12.4) scale(.84)"/><path fill="${textColor}" d="${outlines.path}" transform="translate(144 30.566)"/>`);
 
 await writeFile(join(directory, 'tiago-ismar-symbol.svg'), symbol(colors.forest));
@@ -39,4 +37,4 @@ if (sharpArgument !== -1) {
     await sharp(join(directory, `${file}.svg`)).resize({ width }).png().toFile(join(directory, `${file}.png`));
   }
 }
-console.log('Generated v5 Ibiapaba landscape symbol, horizontal lockups and favicon.');
+console.log('Generated the Ibiapaba T symbol, horizontal lockups and favicon.');

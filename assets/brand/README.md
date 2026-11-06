@@ -1,8 +1,8 @@
-# Tiago Ismar — Serra da Ibiapaba · v5
+# Tiago Ismar — T da Ibiapaba
 
-O símbolo representa a paisagem com duas formas preenchidas: o topo extenso da chapada, uma escarpa mais íngreme à direita e uma encosta em primeiro plano. O espaço transparente entre elas sugere o vale. A silhueta assimétrica e as transições curvas dão movimento ao relevo.
+O topo da chapada desenha a barra do T e desce à direita como uma escarpa. A haste da inicial termina em diagonal, acompanhando o relevo. Uma segunda encosta aparece do outro lado do vale transparente.
 
-É um desenho original inspirado na Ibiapaba, não um símbolo oficial da região, representação cartográfica ou reprodução de uma fotografia. A paisagem é a forma principal da marca; o nome Tiago Ismar permanece na assinatura horizontal.
+É um desenho original inspirado na Ibiapaba, não um símbolo oficial da região, representação cartográfica ou reprodução de uma fotografia. O nome Tiago Ismar permanece na assinatura horizontal.
 
 ## Referências de forma
 

@@ -606,8 +606,13 @@ def create_app(test_config=None):
 def upsert_admin(app, username, password, *, replace=False):
     """Provision through a trusted CLI/test harness, never through a public endpoint."""
     username = username.strip().casefold()
-    if not re.fullmatch(r"[a-z0-9_.-]{3,50}", username):
-        raise ValueError("Use de 3 a 50 letras, números, ponto, hífen ou sublinhado no usuário.")
+    short_name = re.fullmatch(r"[a-z0-9_.-]{3,50}", username)
+    email_name = len(username) <= 80 and re.fullmatch(
+        r"[a-z0-9][a-z0-9_.+%-]*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+",
+        username,
+    )
+    if not short_name and not email_name:
+        raise ValueError("Use um e-mail de até 80 caracteres ou um nome de usuário válido.")
     if not isinstance(password, str) or not 12 <= len(password) <= 1024:
         raise ValueError("Use uma senha com pelo menos 12 caracteres.")
     db = sqlite3.connect(app.config["DATA_DIR"] / "content.sqlite3")

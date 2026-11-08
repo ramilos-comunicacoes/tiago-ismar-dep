@@ -74,6 +74,16 @@
   function confirmationCount(total) {
     return `${total.toLocaleString('pt-BR')} ${total === 1 ? 'presença confirmada' : 'presenças confirmadas'}`;
   }
+  function renderOwnerPhone(phone) {
+    const parts = typeof phone === 'string' && phone.match(/^(\+55)?([1-9]\d)(\d{4,5})(\d{4})$/);
+    if (!parts) return node('span', 'Telefone do proprietário não informado');
+    const [, country, area, prefix, suffix] = parts;
+    const number = `${country ? country + ' ' : ''}(${area}) ${prefix}-${suffix}`;
+    const link = node('a', null, 'rsvp-owner-phone');
+    link.href = `tel:+55${area}${prefix}${suffix}`;
+    link.append(node('span', 'Telefone do proprietário'), node('strong', number));
+    return link;
+  }
   function renderConfirmationEvent(event) {
     const group = node('section', null, 'panel rsvp-group');
     const head = node('div', null, 'rsvp-group-heading');
@@ -100,7 +110,11 @@
     registrations.forEach(registration => {
       const row = node('li');
       const identity = node('div');
-      identity.append(node('strong', registration.name), node('span', registration.enterprise));
+      identity.append(
+        node('strong', registration.name),
+        node('span', registration.enterprise),
+        renderOwnerPhone(registration.owner_phone),
+      );
       row.append(identity);
       const date = new Date(registration.created_at);
       if (Number.isFinite(date.getTime())) {

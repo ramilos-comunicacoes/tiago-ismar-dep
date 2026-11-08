@@ -259,7 +259,7 @@ def test_event_rsvp_is_private_idempotent_and_kept_after_deletion(configured):
     event = {"title": "Encontro do Trade", "city": "Tianguá", "registration_slug": slug}
     created = admin.post("/api/admin/events", json=event, headers=headers).json["item"]
     record_path = "/api/admin/events/" + created["id"]
-    participant = {"name": "  Lívia   Mendes  ", "enterprise": "Pousada da Serra"}
+    participant = {"name": "  Lívia   Mendes  ", "enterprise": "Pousada da Serra", "owner_phone": "+55 (88) 90000-0000"}
 
     assert public.post(path, json=participant, headers=public_headers).status_code == 404
     assert public.get("/api/admin/rsvps").status_code == 401
@@ -267,16 +267,26 @@ def test_event_rsvp_is_private_idempotent_and_kept_after_deletion(configured):
         record_path, json={"version": created["version"], "published": True}, headers=headers
     ).status_code == 200
     assert public.post(path, json=participant).status_code == 403
-    for invalid in ({**participant, "name": ""}, {**participant, "enterprise": "X" * 121}, {"name": "Lívia"}):
+    for invalid in (
+        {**participant, "name": ""},
+        {**participant, "enterprise": "X" * 121},
+        {"name": "Lívia", "enterprise": "Pousada da Serra"},
+        {**participant, "owner_phone": ""},
+        {**participant, "owner_phone": "90000-0000"},
+        {**participant, "owner_phone": "+1 (88) 90000-0000"},
+        {**participant, "owner_phone": "(88) 90000-0000 ramal 1"},
+    ):
         assert public.post(path, json=invalid, headers=public_headers).status_code == 400
 
     assert public.post(path, json=participant, headers=public_headers).json == {"ok": True}
-    retry = {"name": "li\u0301via mendes", "enterprise": "pousada da serra"}
+    retry = {"name": "li\u0301via mendes", "enterprise": "pousada da serra", "owner_phone": "(88) 3333-0000"}
     assert public.post(path, json=retry, headers=public_headers).json == {"ok": True}
     public_event = public.get("/api/public/content").json["events"][0]
     assert public_event["registration_slug"] == slug
     assert public_event["start_at"] == ""
     assert "Lívia Mendes" not in str(public_event)
+    assert "owner_phone" not in public_event
+    assert "900000000" not in str(public_event)
     result = admin.get("/api/admin/rsvps")
     assert "no-store" in result.headers["Cache-Control"]
     [registered_event] = result.json["events"]
@@ -284,6 +294,7 @@ def test_event_rsvp_is_private_idempotent_and_kept_after_deletion(configured):
     [registration] = registered_event["registrations"]
     assert registration["name"] == "Lívia Mendes"
     assert registration["enterprise"] == "Pousada da Serra"
+    assert registration["owner_phone"] == "+5588900000000"
     assert registration["created_at"]
 
     assert admin.delete(record_path, json={"version": 2}, headers=headers).status_code == 200
@@ -291,6 +302,28 @@ def test_event_rsvp_is_private_idempotent_and_kept_after_deletion(configured):
     [removed_event] = admin.get("/api/admin/rsvps").json["events"]
     assert removed_event["registration_slug"] == ""
     assert removed_event["registrations"] == [registration]
+
+
+def test_rsvp_phone_migration_keeps_existing_confirmations(configured):
+    app, password = configured
+    admin, headers = login(app, password)
+    slug = "encontro-legado"
+    event = {"title": "Encontro", "city": "Tianguá", "registration_slug": slug, "published": True}
+    assert admin.post("/api/admin/events", json=event, headers=headers).status_code == 201
+    path = f"/api/public/events/{slug}/rsvp"
+    public_headers = {"Origin": "http://localhost"}
+    participant = {"name": "Maria", "enterprise": "Pousada", "owner_phone": "(88) 3333-0000"}
+    assert app.test_client().post(path, json=participant, headers=public_headers).json == {"ok": True}
+    [original] = admin.get("/api/admin/rsvps").json["events"][0]["registrations"]
+    assert original["owner_phone"] == "8833330000"
+    with sqlite3.connect(app.config["DATA_DIR"] / "content.sqlite3") as db:
+        db.execute("ALTER TABLE event_rsvps DROP COLUMN owner_phone")
+
+    migrated = create_app(app.config)
+    admin, _ = login(migrated, password)
+    assert admin.get("/api/admin/rsvps").json["events"][0]["registrations"] == [{**original, "owner_phone": ""}]
+    assert migrated.test_client().post(path, json=participant, headers=public_headers).json == {"ok": True}
+    assert admin.get("/api/admin/rsvps").json["events"][0]["registrations"] == [original]
 
 
 def test_event_registration_slug_validation_and_edits(configured):

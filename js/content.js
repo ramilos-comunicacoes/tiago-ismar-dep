@@ -131,6 +131,7 @@
     for (const [name, label, autocomplete] of [
       ['name', 'Seu nome', 'name'],
       ['enterprise', 'Nome do empreendimento', 'organization'],
+      ['owner_phone', 'Telefone de contato do proprietário', 'tel'],
     ]) {
       const field = element('label', 'event-rsvp-field', label);
       const input = element('input');
@@ -138,6 +139,12 @@
       input.required = true;
       input.maxLength = 120;
       input.autocomplete = autocomplete;
+      if (name === 'owner_phone') {
+        field.classList.add('event-rsvp-phone');
+        input.type = 'tel';
+        input.maxLength = 32;
+        input.placeholder = '(88) 99999-9999';
+      }
       field.append(input);
       fields.append(field);
     }
@@ -149,7 +156,7 @@
     form.append(
       fields,
       submit,
-      element('p', 'event-rsvp-note', 'Seus dados serão usados pela organização para a lista de presença.'),
+      element('p', 'event-rsvp-note', 'A organização usará seus dados para a lista de presença e para contato sobre o encontro.'),
       status,
     );
     form.addEventListener('submit', async (event) => {
@@ -158,8 +165,9 @@
       const values = new FormData(form);
       const name = values.get('name').trim();
       const enterprise = values.get('enterprise').trim();
-      if (!name || !enterprise) {
-        status.textContent = 'Preencha seu nome e o nome do empreendimento.';
+      const ownerPhone = values.get('owner_phone').trim();
+      if (!name || !enterprise || !ownerPhone) {
+        status.textContent = 'Preencha seu nome, o empreendimento e o telefone de contato.';
         return;
       }
       const controller = new AbortController();
@@ -171,7 +179,7 @@
           method: 'POST',
           credentials: 'omit',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ name, enterprise }),
+          body: JSON.stringify({ name, enterprise, owner_phone: ownerPhone }),
           signal: controller.signal,
         });
         const result = await response.json();

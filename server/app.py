@@ -104,6 +104,7 @@ def initialize_database(data_dir):
             name TEXT NOT NULL,
             enterprise TEXT NOT NULL,
             created_at TEXT NOT NULL,
+            owner_phone TEXT NOT NULL DEFAULT '',
             PRIMARY KEY(event_id, participant_key)
         );
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -125,6 +126,8 @@ def initialize_database(data_dir):
         db.execute("BEGIN IMMEDIATE")
         if "expires_at" not in {row[1] for row in db.execute("PRAGMA table_info(rate_limits)")}:
             db.execute("ALTER TABLE rate_limits ADD COLUMN expires_at INTEGER NOT NULL DEFAULT 0")
+        if "owner_phone" not in {row[1] for row in db.execute("PRAGMA table_info(event_rsvps)")}:
+            db.execute("ALTER TABLE event_rsvps ADD COLUMN owner_phone TEXT NOT NULL DEFAULT ''")
         db.execute("INSERT OR IGNORE INTO metadata VALUES ('rate_salt', ?)", (secrets.token_hex(32),))
         db.execute("INSERT OR IGNORE INTO metadata VALUES ('metrics_since', ?)", (utc_now(),))
         seed = json.loads((Path(__file__).parent / "seed.json").read_text(encoding="utf-8"))
@@ -450,12 +453,18 @@ def create_app(test_config=None):
             raise APIError("Confirmações indisponíveis para este evento.", 404)
         rate_limit("event-rsvp", 30, 60)
         data = payload()
-        if set(data) != {"name", "enterprise"}:
-            raise APIError("Informe seu nome e o nome do empreendimento.")
+        if set(data) != {"name", "enterprise", "owner_phone"}:
+            raise APIError("Informe seu nome, o nome do empreendimento e o telefone do proprietário.")
         name = " ".join(text_field(data["name"], "nome", REGISTRATION_FIELD_LIMIT, required=True).split())
         enterprise = " ".join(
             text_field(data["enterprise"], "empreendimento", REGISTRATION_FIELD_LIMIT, required=True).split()
         )
+        phone = text_field(data["owner_phone"], "telefone do proprietário", 32, required=True)
+        phone = re.sub(r"[\s().-]+", "", phone)
+        if re.fullmatch(r"\+?55[1-9][0-9]{9,10}", phone):
+            phone = "+" + phone.lstrip("+")
+        elif not re.fullmatch(r"[1-9][0-9]{9,10}", phone):
+            raise APIError("Informe um telefone válido com DDD, como (88) 99999-9999.")
         identity = [unicodedata.normalize("NFKC", value).casefold() for value in (name, enterprise)]
         participant_key = digest(json.dumps(identity))
         db = connection()
@@ -465,9 +474,10 @@ def create_app(test_config=None):
             if not event or not json.loads(event["data"]).get("published"):
                 raise APIError("Confirmações indisponíveis para este evento.", 404)
             db.execute(
-                "INSERT INTO event_rsvps(event_id,participant_key,name,enterprise,created_at) VALUES (?,?,?,?,?) "
-                "ON CONFLICT(event_id,participant_key) DO NOTHING",
-                (event["id"], participant_key, name, enterprise, utc_now()),
+                "INSERT INTO event_rsvps(event_id,participant_key,name,enterprise,created_at,owner_phone) "
+                "VALUES (?,?,?,?,?,?) ON CONFLICT(event_id,participant_key) DO UPDATE "
+                "SET owner_phone=excluded.owner_phone WHERE event_rsvps.owner_phone=''",
+                (event["id"], participant_key, name, enterprise, utc_now(), phone),
             )
         return jsonify(ok=True)
 
@@ -481,7 +491,7 @@ def create_app(test_config=None):
     def admin_rsvps():
         rows = connection().execute(
             """
-            SELECT event.id, event.data, event.deleted, rsvp.name, rsvp.enterprise, rsvp.created_at
+            SELECT event.id, event.data, event.deleted, rsvp.name, rsvp.enterprise, rsvp.created_at, rsvp.owner_phone
               FROM records AS event
               LEFT JOIN event_rsvps AS rsvp ON rsvp.event_id=event.id
              WHERE event.kind='events'
@@ -503,7 +513,7 @@ def create_app(test_config=None):
                 }
             if row["name"] is not None:
                 events[event_id]["registrations"].append(
-                    {key: row[key] for key in ("name", "enterprise", "created_at")}
+                    {key: row[key] for key in ("name", "enterprise", "created_at", "owner_phone")}
                 )
         return jsonify(events=list(events.values()))
 

@@ -42,3 +42,12 @@
 .rsvp-attendees li:last-child { padding-bottom: 0; }
 .rsvp-attendees span { display: block; color: var(--muted); }
 .rsvp-attendees time { color: var(--muted); }
+.rsvp-owner-phone {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  gap: 0 8px;
+  min-height: 48px;
+  text-underline-offset: 3px;
+}

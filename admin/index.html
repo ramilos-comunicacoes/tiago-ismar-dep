@@ -8,8 +8,8 @@
   <title>Tiago Ismar · Meu espaço</title>
   <link rel="icon" href="/assets/personal-favicon.svg?v=8">
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/admin/admin.css?v=1">
-  <script src="/admin/admin.js?v=1" defer></script>
+  <link rel="stylesheet" href="/admin/admin.css?v=2">
+  <script src="/admin/admin.js?v=2" defer></script>
 </head>
 <body>
   <a class="skip" href="#workspace">Ir para o conteúdo</a>
@@ -33,12 +33,16 @@
   </main>
   <div id="admin-view" class="admin-layout" hidden>
     <header class="app-header"><a href="/admin/" aria-label="Painel Tiago Ismar"><img class="brand" src="/assets/brand/tiago-ismar-logo-light.svg?v=8" alt="Tiago Ismar" width="588" height="124"></a><div><a href="/" target="_blank" rel="noopener" class="header-link">Ver site <svg aria-hidden="true"><use href="/assets/icons/lucide.svg#arrow-up-right"></use></svg></a><button id="logout" class="header-link" type="button">Sair</button></div></header>
-    <aside class="sidebar"><p class="eyebrow">MEU ESPAÇO</p><nav aria-label="Administração" id="admin-nav"><button type="button" data-view="overview" aria-current="page">Visão geral</button><button type="button" data-view="companies">Empresas</button><button type="button" data-view="catalog_items">Catálogos</button><button type="button" data-view="events">Eventos</button><button type="button" data-view="projects">Projetos</button><button type="button" data-view="partners">Parceiros por cidade</button><button type="button" data-view="settings">Textos e contato</button></nav><p class="sidebar-note">A serra em movimento.<br>O conteúdo nas suas mãos.</p></aside>
+    <aside class="sidebar"><p class="eyebrow">MEU ESPAÇO</p><nav aria-label="Administração" id="admin-nav"><button type="button" data-view="overview" aria-current="page">Visão geral</button><button type="button" data-view="companies">Empresas</button><button type="button" data-view="catalog_items">Catálogos</button><button type="button" data-view="events">Eventos</button><button type="button" data-view="rsvps">Confirmações</button><button type="button" data-view="projects">Projetos</button><button type="button" data-view="partners">Parceiros por cidade</button><button type="button" data-view="settings">Textos e contato</button></nav><p class="sidebar-note">A serra em movimento.<br>O conteúdo nas suas mãos.</p></aside>
     <main id="workspace" tabindex="-1">
       <div class="workspace-heading"><div><p id="view-kicker" class="eyebrow">TIAGO ISMAR</p><h1 id="view-title">Visão geral</h1><p id="view-description">Um olhar sobre o seu site.</p></div><button id="add-item" class="primary" type="button" hidden>Novo cadastro <svg aria-hidden="true"><use href="/assets/icons/lucide.svg#arrow-up-right"></use></svg></button></div>
       <p id="app-status" role="status" aria-live="polite"></p>
       <section id="overview-panel" aria-label="Resumo do site"></section>
       <section id="records-panel" hidden aria-label="Cadastros"><div class="filters"><label>Buscar<input id="record-search" type="search" placeholder="Nome ou cidade"></label><label>Situação<select id="record-state"><option value="all">Todos</option><option value="published">Publicados</option><option value="draft">Rascunhos</option></select></label><label id="city-filter-label">Cidade<select id="record-city"><option value="">Todas as cidades</option></select></label></div><p id="record-count" class="muted" role="status"></p><div id="record-list" class="record-list"></div></section>
+      <section id="rsvps-panel" hidden aria-label="Confirmações por evento">
+        <div class="rsvp-toolbar"><p id="rsvps-status" class="muted" role="status"></p><button id="refresh-rsvps" class="secondary" type="button">Atualizar lista</button></div>
+        <div id="rsvps-list" class="rsvp-groups"></div>
+      </section>
       <section id="settings-panel" hidden><form id="settings-form" class="settings-card"><h2>O jeito de se apresentar</h2><label for="site_intro">Texto de apresentação</label><textarea id="site_intro" name="site_intro" rows="5" maxlength="1500"></textarea><label for="contact_whatsapp">WhatsApp para contato</label><input id="contact_whatsapp" name="contact_whatsapp" type="tel" inputmode="tel" maxlength="20"><p class="field-note">Inclua o código do país e o DDD.</p><label for="catalog_url">Link do catálogo no WhatsApp</label><input id="catalog_url" name="catalog_url" type="url" maxlength="1200" placeholder="https://wa.me/c/…"><label for="companies_title">Título da área de empresas</label><input id="companies_title" name="companies_title" maxlength="120"><label for="companies_intro">Apresentação das empresas</label><textarea id="companies_intro" name="companies_intro" rows="3" maxlength="600"></textarea><label for="events_intro">Apresentação da agenda</label><textarea id="events_intro" name="events_intro" rows="3" maxlength="600"></textarea><label for="projects_intro">Apresentação dos projetos</label><textarea id="projects_intro" name="projects_intro" rows="3" maxlength="600"></textarea><button class="primary" type="submit">Salvar alterações</button></form></section>
     </main>
   </div>

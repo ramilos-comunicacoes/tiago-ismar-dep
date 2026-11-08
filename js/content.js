@@ -7,6 +7,7 @@
   const collections = new Map();
   const catalog = [];
   let opener;
+  let activeRegistration = '';
   // Display only the brand panel from the owner's unchanged WhatsApp captures.
   // Replacing an image in the CMS with a normal upload removes this presentation.
   const catalogLogos = new Map([
@@ -121,12 +122,96 @@
     group.append(element('dt', '', name), element('dd', '', value));
     list.append(group);
   }
+
+  function registrationForm(slug) {
+    const form = element('form', 'event-rsvp');
+    form.method = 'post';
+    form.action = `/api/public/events/${encodeURIComponent(slug)}/rsvp`;
+    const fields = element('div', 'event-rsvp-fields');
+    for (const [name, label, autocomplete] of [
+      ['name', 'Seu nome', 'name'],
+      ['enterprise', 'Nome do empreendimento', 'organization'],
+    ]) {
+      const field = element('label', 'event-rsvp-field', label);
+      const input = element('input');
+      input.name = name;
+      input.required = true;
+      input.maxLength = 120;
+      input.autocomplete = autocomplete;
+      field.append(input);
+      fields.append(field);
+    }
+    const submit = element('button', 'event-rsvp-submit', 'Confirmar presença');
+    submit.type = 'submit';
+    submit.append(icon('arrow-right'));
+    const status = element('p', 'event-rsvp-status');
+    status.setAttribute('role', 'status');
+    form.append(
+      fields,
+      submit,
+      element('p', 'event-rsvp-note', 'Seus dados serão usados pela organização para a lista de presença.'),
+      status,
+    );
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (submit.disabled) return;
+      const values = new FormData(form);
+      const name = values.get('name').trim();
+      const enterprise = values.get('enterprise').trim();
+      if (!name || !enterprise) {
+        status.textContent = 'Preencha seu nome e o nome do empreendimento.';
+        return;
+      }
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 15000);
+      submit.disabled = true;
+      status.textContent = 'Confirmando sua presença…';
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ name, enterprise }),
+          signal: controller.signal,
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          status.textContent = response.status < 500 && result.error
+            ? result.error : 'Não foi possível confirmar agora. Tente novamente.';
+          return;
+        }
+        const success = element('div', 'event-rsvp-success');
+        const heading = element('h3', '', 'Presença confirmada!');
+        heading.tabIndex = -1;
+        success.append(icon('check'), heading, element('p', '', 'Seu nome foi incluído na lista. Até o encontro!'));
+        form.replaceWith(success);
+        heading.focus();
+      } catch (_) {
+        status.textContent = 'Não foi possível confirmar agora. Tente novamente.';
+      } finally {
+        window.clearTimeout(timeout);
+        submit.disabled = false;
+      }
+    });
+    return form;
+  }
+
+  function presentDetails(trigger) {
+    opener = trigger;
+    if (!dialog.open) dialog.showModal();
+    dialog.scrollTop = 0;
+    dialog.querySelector('[data-content-close]').focus({ preventScroll: true });
+  }
+
   function showDetails(record, kind, trigger) {
     if (!dialog || !detail) return;
+    activeRegistration = kind === 'events' ? record.registration_slug || '' : '';
+    dialog.classList.toggle('is-registration', Boolean(activeRegistration));
     detail.replaceChildren();
-    const cover = imageNode(record.image, record.title, 'content-detail-cover');
+    const cover = activeRegistration ? null : imageNode(record.image, record.title, 'content-detail-cover');
     if (cover) detail.append(cover);
-    detail.append(element('p', 'content-detail-eyebrow', recordMeta(record, kind)));
+    const eyebrow = activeRegistration ? 'Confirmação de presença' : recordMeta(record, kind);
+    detail.append(element('p', 'content-detail-eyebrow', eyebrow));
     const title = element('h2', '', record.title);
     title.id = 'content-dialog-title';
     detail.append(title);
@@ -136,11 +221,12 @@
       fact(facts, 'Quando', formatDate(record.start_at, true));
       fact(facts, 'Até', formatDate(record.end_at, true));
       fact(facts, 'Onde', record.location);
-      fact(facts, 'Cidade', record.city);
+      if (!activeRegistration) fact(facts, 'Cidade', record.city);
     }
     if (kind === 'projects') fact(facts, 'Andamento', projectStatus[record.status]);
     if (kind === 'companies' && record.is_group) fact(facts, 'Empresa', 'Grupo Ramilos');
     if (facts.childElementCount) detail.append(facts);
+    if (activeRegistration) detail.append(registrationForm(activeRegistration));
     const actions = element('div', 'content-detail-actions');
     const destination = publicURL(record.url);
     const instagram = destination && ['instagram.com', 'www.instagram.com'].includes(new URL(destination).hostname);
@@ -171,11 +257,41 @@
         detail.append(grid);
       }
     }
-    opener = trigger;
-    dialog.showModal();
-    dialog.scrollTop = 0;
-    dialog.querySelector('[data-content-close]').focus({ preventScroll: true });
+    presentDetails(trigger);
   }
+
+  function registrationHash() {
+    return location.hash.match(/^#inscricao=([a-z0-9]+(?:-[a-z0-9]+)*)$/)?.[1] || '';
+  }
+
+  function registrationNotice(slug, heading, message) {
+    activeRegistration = slug;
+    dialog.classList.add('is-registration');
+    const title = element('h2', '', heading);
+    title.id = 'content-dialog-title';
+    detail.replaceChildren(title, element('p', 'content-detail-description', message));
+  }
+
+  function openRegistrationFromHash() {
+    const slug = registrationHash();
+    if (!slug) {
+      if (activeRegistration && dialog?.open) dialog.close();
+      return;
+    }
+    if (!dialog || !detail || (dialog.open && activeRegistration === slug)) return;
+    const events = collections.get('events');
+    if (!events) return;
+    document.querySelector('#eventos').scrollIntoView({ behavior: 'instant' });
+    const index = events.items.findIndex((event) => event.registration_slug === slug);
+    if (index >= 0) {
+      const trigger = events.track.querySelectorAll('.content-card:not([data-clone]) button')[index];
+      showDetails(events.items[index], 'events', trigger);
+      return;
+    }
+    registrationNotice(slug, 'Inscrição indisponível', 'Confira os encontros disponíveis na agenda.');
+    presentDetails();
+  }
+
   dialog?.querySelector('[data-content-close]')?.addEventListener('click', () => dialog.close());
   dialog?.addEventListener('click', (event) => {
     if (event.target !== dialog) return;
@@ -183,15 +299,21 @@
     if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
   });
   dialog?.addEventListener('close', () => {
+    if (activeRegistration && registrationHash() === activeRegistration) {
+      history.replaceState(history.state, '', '#eventos');
+    }
+    activeRegistration = '';
     opener?.focus({ preventScroll: true });
     opener = null;
   });
+  window.addEventListener('hashchange', openRegistrationFromHash);
 
   function card(record, kind, cloned = false) {
     const article = element('article', 'content-card');
     const button = element('button');
     button.type = 'button';
-    button.setAttribute('aria-label', `Conheça ${record.title}`);
+    const registration = kind === 'events' && record.registration_slug;
+    button.setAttribute('aria-label', registration ? `Confirmar presença: ${record.title}` : `Conheça ${record.title}`);
     const art = element('div', `content-card-art${kind === 'events' ? ' is-poster' : ''}`);
     const image = imageNode(record.image, '');
     if (image) art.append(image);
@@ -204,6 +326,11 @@
     if (kind === 'companies' && record.is_group) copy.append(element('span', 'content-card-detail', 'Grupo Ramilos'));
     const eventEnd = eventDate(record.end_at) || eventDate(record.start_at);
     if (kind === 'events' && eventEnd && eventEnd < new Date()) copy.append(element('span', 'content-card-detail', 'Já aconteceu'));
+    if (registration) {
+      const cta = element('span', 'event-card-rsvp', 'Confirmar presença');
+      cta.append(icon('arrow-right'));
+      copy.append(cta);
+    }
     button.append(art, copy);
     if (cloned) {
       article.setAttribute('aria-hidden', 'true');
@@ -217,6 +344,7 @@
         const origin = collection.track.children[0].offsetLeft;
         collection.track.scrollTo({ left: original.closest('.content-card').offsetLeft - origin, behavior: 'instant' });
       }
+      if (registration) history.replaceState(history.state, '', `#inscricao=${registration}`);
       showDetails(record, kind, original || button);
     });
     article.append(button);
@@ -382,6 +510,8 @@
       renderPartners(data.partners);
       if (retrying) document.querySelector('#partner-search')?.focus({ preventScroll: true });
       applySettings(data.settings);
+      if (activeRegistration && !detail.querySelector('.event-rsvp, .event-rsvp-success')) activeRegistration = '';
+      openRegistrationFromHash();
       startStatistics();
     }).catch(() => {
       // A failed request never restores a stale public snapshot of edited or removed partners.
@@ -392,6 +522,15 @@
       document.querySelectorAll('[data-content-empty] p').forEach((message) => {
         message.textContent = 'Este conteúdo está indisponível no momento. Tente novamente em instantes.';
       });
+      const slug = registrationHash();
+      if (slug && dialog && detail) {
+        registrationNotice(slug, 'Não foi possível abrir a inscrição', 'Tente carregar o formulário novamente.');
+        const retryRegistration = element('button', 'event-rsvp-submit event-rsvp-retry', 'Tentar novamente');
+        retryRegistration.type = 'button';
+        retryRegistration.addEventListener('click', loadContent);
+        detail.append(retryRegistration);
+        presentDetails();
+      }
     }).finally(() => { window.clearTimeout(timeout); loading = false; });
   }
   retry?.addEventListener('click', loadContent);

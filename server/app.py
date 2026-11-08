@@ -16,6 +16,7 @@ import re
 import secrets
 import sqlite3
 import time
+import unicodedata
 from urllib.parse import urlsplit
 import warnings
 from zoneinfo import ZoneInfo
@@ -33,7 +34,7 @@ COMMON = {"title", "city", "description", "image", "published", "sort_order"}
 FIELDS = {
     "companies": COMMON | {"category", "whatsapp", "url", "is_group"},
     "catalog_items": COMMON | {"company_id", "price_text", "url"},
-    "events": COMMON | {"location", "start_at", "end_at", "url"},
+    "events": COMMON | {"location", "start_at", "end_at", "url", "registration_slug"},
     "projects": COMMON | {"status", "url"},
     "partners": {"title", "city", "published", "sort_order"},
 }
@@ -48,6 +49,9 @@ SETTING_LIMITS = {
 }
 SECTIONS = {"inicio", "tiago", "serra", "olhares", "empresas", "eventos", "projetos", "parceiros", "contato"}
 MAX_RECORDS = 5000
+REGISTRATION_SLUG_LIMIT = 80
+REGISTRATION_SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+REGISTRATION_FIELD_LIMIT = 120
 Image.MAX_IMAGE_PIXELS = 20_000_000
 
 
@@ -94,6 +98,14 @@ def initialize_database(data_dir):
             version INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS records_kind ON records(kind, deleted);
+        CREATE TABLE IF NOT EXISTS event_rsvps (
+            event_id TEXT NOT NULL REFERENCES records(id),
+            participant_key TEXT NOT NULL,
+            name TEXT NOT NULL,
+            enterprise TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY(event_id, participant_key)
+        );
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS rate_limits (
             key TEXT NOT NULL, bucket INTEGER NOT NULL, hits INTEGER NOT NULL,
@@ -332,7 +344,14 @@ def create_app(test_config=None):
                 return value
         raise APIError("Envie uma imagem pelo painel ou use uma foto existente do site.")
 
-    def validated(kind, source, previous=None):
+    def registration_event(slug):
+        return connection().execute(
+            "SELECT id, data FROM records WHERE kind='events' AND deleted=0 "
+            "AND json_extract(data, '$.registration_slug')=?",
+            (slug,),
+        ).fetchone()
+
+    def validated(kind, source, previous=None, item_id=None):
         if kind not in KINDS:
             raise APIError("Tipo de conteúdo não encontrado.", 404)
         unknown = set(source) - FIELDS[kind] - {"version"}
@@ -358,6 +377,8 @@ def create_app(test_config=None):
                 data[key] = image_field(data[key])
             elif key == "url":
                 data[key] = url_field(data[key], "link")
+            elif key == "registration_slug":
+                data[key] = text_field(data[key], "link de confirmação", REGISTRATION_SLUG_LIMIT).lower()
             else:
                 limit = {"title": 160, "description": 6000, "city": 100, "location": 250, "company_id": 24, "whatsapp": 20, "start_at": 32, "end_at": 32}.get(key, 150)
                 data[key] = text_field(data[key], key, limit, key == "title" or (key == "city" and kind != "catalog_items"))
@@ -370,7 +391,14 @@ def create_app(test_config=None):
             if data["published"] and not json.loads(company["data"])["published"]:
                 raise APIError("Publique a empresa antes de publicar seus itens de catálogo.")
         if kind == "events":
-            if not data["start_at"]:
+            slug = data["registration_slug"]
+            if slug and not REGISTRATION_SLUG.fullmatch(slug):
+                raise APIError("Use apenas letras sem acento, números e hífens no link de confirmação.")
+            if slug:
+                existing = registration_event(slug)
+                if existing and existing["id"] != item_id:
+                    raise APIError("Este link de confirmação já pertence a outro evento.", 409)
+            if not data["start_at"] and (not slug or data["end_at"]):
                 raise APIError("Informe a data e o horário do evento.")
             parsed = []
             for field in ("start_at", "end_at"):
@@ -415,10 +443,69 @@ def create_app(test_config=None):
         response.headers["Cache-Control"] = "no-cache"
         return response
 
+    @app.post("/api/public/events/<slug>/rsvp")
+    def confirm_event_presence(slug):
+        require_origin()
+        if len(slug) > REGISTRATION_SLUG_LIMIT or not REGISTRATION_SLUG.fullmatch(slug):
+            raise APIError("Confirmações indisponíveis para este evento.", 404)
+        rate_limit("event-rsvp", 30, 60)
+        data = payload()
+        if set(data) != {"name", "enterprise"}:
+            raise APIError("Informe seu nome e o nome do empreendimento.")
+        name = " ".join(text_field(data["name"], "nome", REGISTRATION_FIELD_LIMIT, required=True).split())
+        enterprise = " ".join(
+            text_field(data["enterprise"], "empreendimento", REGISTRATION_FIELD_LIMIT, required=True).split()
+        )
+        identity = [unicodedata.normalize("NFKC", value).casefold() for value in (name, enterprise)]
+        participant_key = digest(json.dumps(identity))
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            event = registration_event(slug)
+            if not event or not json.loads(event["data"]).get("published"):
+                raise APIError("Confirmações indisponíveis para este evento.", 404)
+            db.execute(
+                "INSERT INTO event_rsvps(event_id,participant_key,name,enterprise,created_at) VALUES (?,?,?,?,?) "
+                "ON CONFLICT(event_id,participant_key) DO NOTHING",
+                (event["id"], participant_key, name, enterprise, utc_now()),
+            )
+        return jsonify(ok=True)
+
     @app.get("/api/admin/content")
     @authenticated
     def admin_content():
         return jsonify(records())
+
+    @app.get("/api/admin/rsvps")
+    @authenticated
+    def admin_rsvps():
+        rows = connection().execute(
+            """
+            SELECT event.id, event.data, event.deleted, rsvp.name, rsvp.enterprise, rsvp.created_at
+              FROM records AS event
+              LEFT JOIN event_rsvps AS rsvp ON rsvp.event_id=event.id
+             WHERE event.kind='events'
+               AND (rsvp.event_id IS NOT NULL OR
+                    (event.deleted=0 AND json_extract(event.data, '$.registration_slug') <> ''))
+             ORDER BY event.updated_at DESC, event.id, rsvp.created_at DESC, rsvp.rowid DESC
+            """
+        )
+        events = {}
+        for row in rows:
+            event_id = row["id"]
+            if event_id not in events:
+                data = json.loads(row["data"])
+                events[event_id] = {
+                    "id": event_id,
+                    "title": data["title"],
+                    "registration_slug": "" if row["deleted"] else data.get("registration_slug", ""),
+                    "registrations": [],
+                }
+            if row["name"] is not None:
+                events[event_id]["registrations"].append(
+                    {key: row[key] for key in ("name", "enterprise", "created_at")}
+                )
+        return jsonify(events=list(events.values()))
 
     @app.post("/api/admin/<kind>")
     @authenticated
@@ -448,7 +535,7 @@ def create_app(test_config=None):
             row = record(kind, item_id)
             if type(source.get("version")) is not int or source["version"] != row["version"]:
                 raise APIError("Este conteúdo mudou em outra aba. Atualize antes de salvar.", 409)
-            data = validated(kind, source, json.loads(row["data"]))
+            data = validated(kind, source, json.loads(row["data"]), item_id)
             result = db.execute("UPDATE records SET data=?, version=version+1, updated_at=? WHERE id=? AND version=? AND deleted=0",
                                 (json.dumps(data, ensure_ascii=False), utc_now(), item_id, source["version"]))
             if not result.rowcount:

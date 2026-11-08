@@ -249,6 +249,76 @@ def test_validation_prevents_executable_urls_and_invalid_data(configured):
     assert client.post("/api/admin/events", json=valid, headers=headers).status_code == 201
 
 
+def test_event_rsvp_is_private_idempotent_and_kept_after_deletion(configured):
+    app, password = configured
+    admin, headers = login(app, password)
+    public = app.test_client()
+    public_headers = {"Origin": "http://localhost"}
+    slug = "encontro-do-trade"
+    path = f"/api/public/events/{slug}/rsvp"
+    event = {"title": "Encontro do Trade", "city": "Tianguá", "registration_slug": slug}
+    created = admin.post("/api/admin/events", json=event, headers=headers).json["item"]
+    record_path = "/api/admin/events/" + created["id"]
+    participant = {"name": "  Lívia   Mendes  ", "enterprise": "Pousada da Serra"}
+
+    assert public.post(path, json=participant, headers=public_headers).status_code == 404
+    assert public.get("/api/admin/rsvps").status_code == 401
+    assert admin.patch(
+        record_path, json={"version": created["version"], "published": True}, headers=headers
+    ).status_code == 200
+    assert public.post(path, json=participant).status_code == 403
+    for invalid in ({**participant, "name": ""}, {**participant, "enterprise": "X" * 121}, {"name": "Lívia"}):
+        assert public.post(path, json=invalid, headers=public_headers).status_code == 400
+
+    assert public.post(path, json=participant, headers=public_headers).json == {"ok": True}
+    retry = {"name": "li\u0301via mendes", "enterprise": "pousada da serra"}
+    assert public.post(path, json=retry, headers=public_headers).json == {"ok": True}
+    public_event = public.get("/api/public/content").json["events"][0]
+    assert public_event["registration_slug"] == slug
+    assert public_event["start_at"] == ""
+    assert "Lívia Mendes" not in str(public_event)
+    result = admin.get("/api/admin/rsvps")
+    assert "no-store" in result.headers["Cache-Control"]
+    [registered_event] = result.json["events"]
+    assert registered_event["id"] == created["id"]
+    [registration] = registered_event["registrations"]
+    assert registration["name"] == "Lívia Mendes"
+    assert registration["enterprise"] == "Pousada da Serra"
+    assert registration["created_at"]
+
+    assert admin.delete(record_path, json={"version": 2}, headers=headers).status_code == 200
+    assert public.post(path, json=participant, headers=public_headers).status_code == 404
+    [removed_event] = admin.get("/api/admin/rsvps").json["events"]
+    assert removed_event["registration_slug"] == ""
+    assert removed_event["registrations"] == [registration]
+
+
+def test_event_registration_slug_validation_and_edits(configured):
+    app, password = configured
+    admin, headers = login(app, password)
+    route = "/api/admin/events"
+    event = {"title": "Encontro", "city": "Tianguá", "start_at": "2026-12-05T10:00"}
+    for invalid in ("invalid slug", "hífen", "-inicio", "a--b", "x" * 81):
+        assert admin.post(route, json={**event, "registration_slug": invalid}, headers=headers).status_code == 400
+    registered = {**event, "registration_slug": "  Encontro-2026  ", "published": True}
+    response = admin.post(route, json=registered, headers=headers)
+    assert response.status_code == 201
+    created = response.json["item"]
+    assert created["registration_slug"] == "encontro-2026"
+    assert admin.post(route, json=registered, headers=headers).status_code == 409
+    second = admin.post(route, json=event, headers=headers).json["item"]
+    assert admin.patch(
+        f"{route}/{second['id']}",
+        json={"version": second["version"], "registration_slug": "encontro-2026"},
+        headers=headers,
+    ).status_code == 409
+    edited = admin.patch(
+        f"{route}/{created['id']}", json={"version": created["version"], "title": "Novo título"}, headers=headers
+    )
+    assert edited.status_code == 200
+    assert edited.json["item"]["registration_slug"] == "encontro-2026"
+
+
 def test_upload_reencodes_images_and_keeps_drafts_private(configured):
     app, password = configured
     client, headers = login(app, password)

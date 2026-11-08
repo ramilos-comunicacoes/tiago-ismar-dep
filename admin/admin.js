@@ -11,8 +11,15 @@
     projects: { title: 'Projetos para a Ibiapaba', single: 'projeto', description: 'Ideias, iniciativas e os próximos passos de cada projeto.' },
     partners: { title: 'Parceiros por cidade', single: 'parceiro', description: 'As listas do trade turístico, organizadas por município.' },
   };
+  const pages = {
+    overview: { title: 'Visão geral', description: 'Um olhar sobre o seu site.' },
+    settings: { title: 'Textos e contato', description: 'A apresentação do site, do seu jeito.' },
+    rsvps: { title: 'Confirmações', description: 'Veja quem confirmou presença nos eventos do site.' },
+  };
   const projectLabels = { idea: 'Ideia', planning: 'Em planejamento', in_progress: 'Em andamento', completed: 'Concluído' };
+  const confirmationDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Fortaleza' });
   let csrf = '', data = {}, stats = {}, currentView = 'overview', editing = null, editorDirty = false, uploadBusy = false, deleting = false;
+  let confirmationsRequest = null;
   async function api(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (options.method && options.method !== 'GET') headers.set('X-CSRF-Token', csrf);
@@ -27,7 +34,7 @@
     return payload;
   }
   function notify(text, error = false) { const el = $('#app-status'); el.textContent = text; el.classList.toggle('error', error); }
-  function showLogin() { $('#boot').hidden = true; $('#admin-view').hidden = true; $('#login-view').hidden = false; if ($('#editor').open) $('#editor').close(); if ($('#confirm-dialog').open) $('#confirm-dialog').close(); data = {}; }
+  function showLogin() { $('#boot').hidden = true; $('#admin-view').hidden = true; $('#login-view').hidden = false; if ($('#editor').open) $('#editor').close(); if ($('#confirm-dialog').open) $('#confirm-dialog').close(); clearConfirmations(); data = {}; }
   async function loadData() { data = await api('/api/admin/content'); }
   async function showAdmin() {
     await loadData();
@@ -41,8 +48,11 @@
     currentView = view;
     $$('#admin-nav button').forEach(button => { if (button.dataset.view === view) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current'); });
     $('#overview-panel').hidden = view !== 'overview'; $('#records-panel').hidden = !kinds[view]; $('#settings-panel').hidden = view !== 'settings'; $('#add-item').hidden = !kinds[view];
-    $('#view-title').textContent = kinds[view]?.title || (view === 'settings' ? 'Textos e contato' : 'Visão geral');
-    $('#view-description').textContent = kinds[view]?.description || (view === 'settings' ? 'A apresentação do site, do seu jeito.' : 'Um olhar sobre o seu site.');
+    $('#rsvps-panel').hidden = view !== 'rsvps';
+    const page = kinds[view] || pages[view];
+    $('#view-title').textContent = page.title;
+    $('#view-description').textContent = page.description;
+    if (view !== 'rsvps') clearConfirmations();
     notify('');
     if (kinds[view]) {
       $('#add-item').firstChild.textContent = `Adicionar ${kinds[view].single} `;
@@ -52,7 +62,87 @@
       $('#city-filter-label').hidden = view === 'catalog_items';
       renderRecords();
     } else if (view === 'overview') renderOverview();
+    else if (view === 'rsvps') loadConfirmations();
     else fillSettings();
+  }
+  function clearConfirmations() {
+    confirmationsRequest?.abort();
+    confirmationsRequest = null;
+    $('#rsvps-list').replaceChildren();
+    $('#rsvps-status').textContent = '';
+  }
+  function confirmationCount(total) {
+    return `${total.toLocaleString('pt-BR')} ${total === 1 ? 'presença confirmada' : 'presenças confirmadas'}`;
+  }
+  function renderConfirmationEvent(event) {
+    const group = node('section', null, 'panel rsvp-group');
+    const head = node('div', null, 'rsvp-group-heading');
+    const info = node('div');
+    const registrations = event.registrations;
+    const title = node('h2', event.title);
+    title.id = `rsvp-event-${event.id}`;
+    group.setAttribute('aria-labelledby', title.id);
+    info.append(title, node('p', confirmationCount(registrations.length), 'muted'));
+    head.append(info);
+    if (event.registration_slug && (data.events || []).some(item => item.id === event.id && item.published)) {
+      const link = node('a', 'Abrir formulário', 'secondary');
+      link.href = `/#inscricao=${encodeURIComponent(event.registration_slug)}`;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      head.append(link);
+    }
+    group.append(head);
+    if (!registrations.length) {
+      group.append(node('p', 'Ainda não há confirmações para este evento.', 'muted'));
+      return group;
+    }
+    const list = node('ul', null, 'rsvp-attendees');
+    registrations.forEach(registration => {
+      const row = node('li');
+      const identity = node('div');
+      identity.append(node('strong', registration.name), node('span', registration.enterprise));
+      row.append(identity);
+      const date = new Date(registration.created_at);
+      if (Number.isFinite(date.getTime())) {
+        const time = node('time', confirmationDate.format(date));
+        time.dateTime = date.toISOString();
+        row.append(time);
+      }
+      list.append(row);
+    });
+    group.append(list);
+    return group;
+  }
+  async function loadConfirmations() {
+    clearConfirmations();
+    const request = new AbortController();
+    confirmationsRequest = request;
+    const list = $('#rsvps-list'), status = $('#rsvps-status'), button = $('#refresh-rsvps');
+    button.disabled = true;
+    status.classList.remove('error');
+    status.textContent = 'Carregando confirmações…';
+    try {
+      const { events } = await api('/api/admin/rsvps', { signal: request.signal });
+      if (request.signal.aborted) return;
+      status.textContent = '';
+      if (!events.length) {
+        showEmpty(list, 'Nenhum evento com confirmações', 'Ative o formulário de presença no cadastro de um evento.');
+        return;
+      }
+      for (const event of events) list.append(renderConfirmationEvent(event));
+      status.textContent = confirmationCount(events.reduce((sum, event) => sum + event.registrations.length, 0));
+    } catch {
+      if (!request.signal.aborted) {
+        list.replaceChildren();
+        status.classList.add('error');
+        status.textContent = 'Não foi possível carregar as confirmações. Atualize a lista para tentar de novo.';
+      }
+    } finally {
+      if (confirmationsRequest === request) {
+        confirmationsRequest = null;
+        button.disabled = false;
+      }
+    }
   }
   function renderOverview() {
     const panel = $('#overview-panel'); panel.replaceChildren();
@@ -99,7 +189,36 @@
     if (options.type === 'number') { input.min = '0'; input.max = '9999'; input.step = '1'; }
     if (name === 'city') input.setAttribute('list', 'city-options');
     if (options.placeholder) input.placeholder = options.placeholder;
-    wrapper.append(caption, input); if (options.note) wrapper.append(node('p', options.note, 'field-note')); return wrapper;
+    wrapper.append(caption, input);
+    if (options.note) {
+      const note = node('p', options.note, 'field-note');
+      note.id = `edit-${name}-note`;
+      input.setAttribute('aria-describedby', note.id);
+      wrapper.append(note);
+    }
+    return wrapper;
+  }
+  function addEventFields(fields, values) {
+    const location = field('location', 'Local do evento', values.location, { max: 250 });
+    const start = field('start_at', 'Começa em', values.start_at, { type: 'datetime-local', note: 'Horário do Ceará. Com o formulário de presença ativo, a data pode ficar em aberto.' });
+    const end = field('end_at', 'Termina em', values.end_at, { type: 'datetime-local' });
+    const registration = field('registration_slug', 'Endereço do formulário de presença', values.registration_slug, {
+      wide: true, max: 80, placeholder: 'reuniao-trade-tiangua',
+      note: 'Preencha para ativar as confirmações ao publicar. Use letras minúsculas, números e hífens. Mantenha o endereço se já compartilhou o link.',
+    });
+    const slug = $('input', registration);
+    slug.pattern = '[a-z0-9]+(?:-[a-z0-9]+)*';
+    slug.autocapitalize = 'none';
+    slug.spellcheck = false;
+    function updateRequiredFields() {
+      const hasRegistration = Boolean(slug.value.trim());
+      $('input', location).required = !hasRegistration;
+      $('input', start).required = !hasRegistration || Boolean($('input', end).value);
+    }
+    slug.addEventListener('input', updateRequiredFields);
+    $('input', end).addEventListener('input', updateRequiredFields);
+    updateRequiredFields();
+    fields.append(location, start, end, registration);
   }
   function checkbox(name, label, checked, note) { const wrapper = node('div', null, 'field wide switch-field'), input = node('input'), labelEl = node('label', label); input.type = 'checkbox'; input.name = name; input.id = `edit-${name}`; input.checked = Boolean(checked); labelEl.htmlFor = input.id; if (note) labelEl.append(node('p', note)); wrapper.append(input, labelEl); return wrapper; }
   function imageField(item) {
@@ -128,7 +247,7 @@
     if (currentView === 'catalog_items') fields.append(field('company_id', 'Empresa', values.company_id || (data.companies || [])[0]?.id, { required: true, choices: (data.companies || []).map(company => [company.id, company.title]), wide: true }));
     else fields.append(field('city', 'Cidade', values.city || 'Tianguá', { required: true, max: 100, wide: currentView === 'partners' }));
     if (currentView === 'companies') { fields.append(field('category', 'Categoria', values.category, { max: 100, placeholder: 'Ex.: hospedagem, gastronomia' }), field('whatsapp', 'WhatsApp da empresa', values.whatsapp, { type: 'tel', max: 20, note: 'Código do país, DDD e número.' })); }
-    if (currentView === 'events') { fields.append(field('location', 'Local do evento', values.location, { required: true }), field('start_at', 'Começa em', values.start_at, { type: 'datetime-local', required: true, note: 'Horário de Brasília / Ceará.' }), field('end_at', 'Termina em', values.end_at, { type: 'datetime-local' })); }
+    if (currentView === 'events') addEventFields(fields, values);
     if (currentView === 'projects') fields.append(field('status', 'Etapa do projeto', values.status || 'idea', { choices: Object.entries(projectLabels) }));
     if (currentView === 'catalog_items') fields.append(field('price_text', 'Preço ou condição', values.price_text, { max: 100, placeholder: 'Ex.: R$ 120 ou Sob consulta', wide: true }));
     if (currentView !== 'partners') { fields.append(field('description', 'Descrição', values.description, { multiline: true, wide: true })); fields.append(field('url', currentView === 'events' ? 'Link de inscrição ou informações' : 'Site ou link para saber mais', values.url, { type: 'url', wide: true, max: 1200, placeholder: 'https://' })); fields.append(imageField(values)); }
@@ -148,6 +267,7 @@
   $('#show-password').addEventListener('click', () => { const visible = $('#password').type === 'password'; $('#password').type = visible ? 'text' : 'password'; $('#show-password').textContent = visible ? 'Ocultar' : 'Mostrar'; $('#show-password').setAttribute('aria-pressed', String(visible)); });
   $('#logout').addEventListener('click', async () => { try { await api('/api/admin/logout', { method: 'POST', body: {} }); showLogin(); } catch (error) { notify(error.message, true); } });
   $('#admin-nav').addEventListener('click', (event) => { const button = event.target.closest('[data-view]'); if (button) renderView(button.dataset.view); });
+  $('#refresh-rsvps').addEventListener('click', loadConfirmations);
   $('#add-item').addEventListener('click', () => openEditor());
   ['record-search', 'record-state', 'record-city'].forEach(id => $(`#${id}`).addEventListener(id === 'record-search' ? 'input' : 'change', renderRecords));
   $('#editor-form').addEventListener('input', () => { editorDirty = true; });

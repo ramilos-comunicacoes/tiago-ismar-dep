@@ -52,6 +52,7 @@ MAX_RECORDS = 5000
 REGISTRATION_SLUG_LIMIT = 80
 REGISTRATION_SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 REGISTRATION_FIELD_LIMIT = 120
+CHAPEL_NAME_LIMIT = 61
 Image.MAX_IMAGE_PIXELS = 20_000_000
 
 
@@ -510,12 +511,29 @@ def create_app(test_config=None):
     @app.get("/api/admin/projects/<project_id>/signups")
     @authenticated
     def project_signup_list(project_id):
-        record("projects", project_id)
+        project = json.loads(record("projects", project_id)["data"])
         rows = connection().execute(
             "SELECT name, tribute_name, created_at FROM project_signups WHERE project_id=? "
             "ORDER BY created_at DESC, rowid DESC", (project_id,)
         )
-        return jsonify(signups=[dict(row) for row in rows])
+        result = {"signups": [dict(row) for row in rows]}
+        if project.get("participation_form") == "capela-de-fatima":
+            result["limit"] = CHAPEL_NAME_LIMIT
+        return jsonify(result)
+
+    def chapel_signup_count(project_id):
+        project = json.loads(record("projects", project_id)["data"])
+        if not project["published"] or project.get("participation_form") != "capela-de-fatima":
+            raise APIError("As inscrições para este projeto estão indisponíveis.", 404)
+        return connection().execute(
+            "SELECT COUNT(*) FROM project_signups WHERE project_id=?", (project_id,)
+        ).fetchone()[0]
+
+    @app.get("/api/public/projects/<project_id>/participation")
+    def project_availability(project_id):
+        response = jsonify(registered=chapel_signup_count(project_id), limit=CHAPEL_NAME_LIMIT)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.post("/api/public/projects/<project_id>/participation")
     def register_project_participant(project_id):
@@ -534,9 +552,7 @@ def create_app(test_config=None):
         db = connection()
         with db:
             db.execute("BEGIN IMMEDIATE")
-            project = json.loads(record("projects", project_id)["data"])
-            if not project["published"] or project.get("participation_form") != "capela-de-fatima":
-                raise APIError("As inscrições para este projeto estão indisponíveis.", 404)
+            registered = chapel_signup_count(project_id)
             saved = db.execute(
                 "SELECT name, tribute_name FROM project_signups WHERE project_id=? AND submission_id=?",
                 (project_id, token),
@@ -544,8 +560,12 @@ def create_app(test_config=None):
             if saved and tuple(saved) != (name, tribute):
                 raise APIError("Este pedido já foi registrado com outra grafia. Contate a organização.", 409)
             if not saved:
+                if registered >= CHAPEL_NAME_LIMIT:
+                    return jsonify(error="Todas as vagas da capela foram preenchidas.",
+                                   registered=registered, limit=CHAPEL_NAME_LIMIT), 409
                 db.execute("INSERT INTO project_signups VALUES (?,?,?,?,?)", (project_id, token, name, tribute, utc_now()))
-        return jsonify(ok=True)
+                registered += 1
+        return jsonify(ok=True, registered=registered, limit=CHAPEL_NAME_LIMIT)
 
     @app.get("/api/admin/rsvps")
     @authenticated

@@ -126,7 +126,8 @@
 .chapel-registration { --chapel-gold:#ead4a5; }
 .chapel-heading .content-detail-eyebrow { margin-top:0; color:var(--chapel-gold); }
 .chapel-registration section { display:grid; gap:16px; margin-top:18px; }
-.chapel-registration section[hidden] { display:none; }
+.chapel-registration [hidden] { display:none; }
+.chapel-availability { margin:12px 0 0; color:var(--chapel-gold); font-weight:650; }
 .chapel-registration p { font-size:16px; line-height:1.55; overflow-wrap:anywhere; }
 .chapel-registration h3 { font:600 clamp(27px,4vw,38px)/1.12 var(--display); }
 .chapel-registration h3:focus { outline:none; }

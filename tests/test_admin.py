@@ -6,6 +6,8 @@ from pathlib import Path
 import secrets
 import sqlite3
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from uuid import uuid4
 
 from PIL import Image
 import pytest
@@ -336,13 +338,14 @@ def test_chapel_signup_requires_published_project_and_preserves_reviewed_names(c
     endpoint = f"/api/public/projects/{item['id']}/participation"
     signup = {"name": "Ana Lívia", "tribute_name": "Família D’Ávila", "submission_id": "edb693d6-de4a-4379-84c9-fc3c0d0870bd"}
     origin = {"Origin": "http://localhost"}
+    assert public.get(endpoint).status_code == 404
     assert public.post(endpoint, json=signup, headers=origin).status_code == 404
     target = "/api/admin/projects/" + item["id"]
     live = admin.patch(target, json={"version": item["version"], "published": True}, headers=headers).json["item"]
     assert public.post(endpoint, json=signup).status_code == 403
     assert public.post(endpoint, json={**signup, "tribute_name": "   "}, headers=origin).status_code == 400
     for _ in range(2):
-        assert public.post(endpoint, json=signup, headers=origin).json == {"ok": True}
+        assert public.post(endpoint, json=signup, headers=origin).json == {"ok": True, "limit": 61, "registered": 1}
     assert public.post(endpoint, json={**signup, "name": "Outro"}, headers=origin).status_code == 409
     assert public.get("/api/admin/rsvps").status_code == 401
     assert "tribute_name" not in public.get("/api/public/content").get_data(as_text=True)
@@ -360,6 +363,37 @@ def test_chapel_signup_requires_published_project_and_preserves_reviewed_names(c
     assert public.post(endpoint, json=signup, headers=origin).status_code == 404
     [saved] = admin.get("/api/admin/rsvps").json["chapel_signups"]
     assert saved["name"] == signup["name"] and saved["tribute_name"] == signup["tribute_name"]
+
+
+def test_chapel_last_place_is_atomic_and_existing_signup_can_retry(configured):
+    app, password = configured
+    admin, headers = login(app, password)
+    project = {"title": "Capela", "city": "Tianguá", "participation_form": "capela-de-fatima", "published": True}
+    project_id = admin.post("/api/admin/projects", json=project, headers=headers).json["item"]["id"]
+    endpoint = f"/api/public/projects/{project_id}/participation"
+    with sqlite3.connect(app.config["DATA_DIR"] / "content.sqlite3") as db:
+        db.executemany("INSERT INTO project_signups VALUES (?,?,?,?,?)", [
+            (project_id, str(uuid4()), f"Pessoa {i}", f"Homenagem {i}", "2026-11-20T12:00:00Z") for i in range(60)
+        ])
+    public = app.test_client()
+    before = public.get(endpoint)
+    assert before.json == {"registered": 60, "limit": 61} and before.headers["Cache-Control"] == "no-store"
+    gate = threading.Barrier(2)
+    def claim(place):
+        signup = {"name": f"Pessoa {place}", "tribute_name": f"Nome {place}", "submission_id": str(uuid4())}
+        gate.wait(timeout=10)
+        response = app.test_client().post(endpoint, json=signup, headers={"Origin": "http://localhost"})
+        return response.status_code, signup
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = dict(pool.map(claim, [61, 62]))
+    assert set(results) == {200, 409}
+    for code, signup in results.items():
+        retry = public.post(endpoint, json=signup, headers={"Origin": "http://localhost"})
+        assert retry.status_code == code and retry.json["registered"] == 61
+    assert public.get(endpoint).json == {"registered": 61, "limit": 61}
+    private = admin.get(f"/api/admin/projects/{project_id}/signups").json
+    assert private["limit"] == len(private["signups"]) == 61
+    assert results[409]["tribute_name"] not in [row["tribute_name"] for row in private["signups"]]
 
 
 def test_event_registration_slug_validation_and_edits(configured):

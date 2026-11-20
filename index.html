@@ -27,10 +27,10 @@
   <link rel="stylesheet" href="./css/styles.css?v=9">
   <link rel="stylesheet" href="./css/motion.css?v=6">
   <link rel="stylesheet" href="./css/hero.css?v=8">
-  <link rel="stylesheet" href="./css/content.css?v=5">
+  <link rel="stylesheet" href="./css/content.css?v=6">
   <link rel="stylesheet" href="./css/mobile.css?v=5" media="(max-width: 1023px)">
   <script src="./js/main.js?v=9" defer></script>
-  <script src="./js/content.js?v=5" defer></script>
+  <script src="./js/content.js?v=6" defer></script>
   <title>Tiago Ismar — Um olhar daqui</title>
 </head>
 <body>
@@ -283,6 +283,7 @@
       <header class="chapel-heading">
         <p class="content-detail-eyebrow">Caminho da Fé</p>
         <h2 id="content-dialog-title"></h2>
+        <p class="chapel-availability" data-availability role="status" tabindex="-1">Consultando vagas…</p>
       </header>
       <section data-chapel-step="entry">
         <figure class="chapel-figure">
@@ -290,7 +291,8 @@
           <figcaption>Interior proposto · Anteprojeto de Mariana Kazze</figcaption>
         </figure>
         <p class="chapel-description"></p>
-        <form class="event-rsvp" method="post">
+        <button class="chapel-secondary" data-reload-availability type="button" hidden>Consultar vagas novamente</button>
+        <form class="event-rsvp" method="post" hidden>
           <div class="event-rsvp-fields">
             <label class="event-rsvp-field">Seu nome<input name="name" autocomplete="name" maxlength="120" required></label>
             <label class="event-rsvp-field">Nome para a homenagem na capela<input name="tribute_name" autocomplete="off" maxlength="120" required aria-describedby="chapel-spelling"></label>

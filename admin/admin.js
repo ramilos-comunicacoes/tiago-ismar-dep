@@ -118,10 +118,14 @@
     status.textContent = 'Carregando inscrições…';
     refresh.disabled = true;
     try {
-      const { signups } = await api(`/api/admin/projects/${encodeURIComponent(signupDialog.dataset.projectId)}/signups`, { signal: request.signal });
+      const { signups, limit } = await api(`/api/admin/projects/${encodeURIComponent(signupDialog.dataset.projectId)}/signups`, { signal: request.signal });
       if (request.signal.aborted || !signupDialog.open) return;
       list.replaceChildren(...signups.map(signupRow));
       status.textContent = signups.length ? `${signups.length} ${signups.length === 1 ? 'pessoa inscrita' : 'pessoas inscritas'}` : 'Ninguém preencheu o formulário deste projeto ainda.';
+      if (limit) {
+        const remaining = Math.max(0, limit - signups.length);
+        status.textContent = `${signups.length} de ${limit} nomes · ${remaining === 0 ? 'Lista completa' : remaining === 1 ? 'Resta 1 vaga' : `Restam ${remaining} vagas`}`;
+      }
     } catch {
       if (!request.signal.aborted && signupDialog.open) status.textContent = 'Não foi possível carregar os inscritos. Toque em Atualizar lista para tentar novamente.';
     } finally {

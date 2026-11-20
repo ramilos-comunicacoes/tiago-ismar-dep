@@ -210,6 +210,8 @@
     const find = (selector) => panel.querySelector(selector);
     const form = find('form'), participant = form.elements.name, tribute = form.elements.tribute_name;
     const edit = find('[data-edit]'), confirm = find('[data-confirm]'), status = find('[data-signup-status]');
+    const availability = find('[data-availability]'), retry = find('[data-reload-availability]');
+    const endpoint = `/api/public/projects/${encodeURIComponent(record.id)}/participation`;
     let submissionId, reviewed;
     find('h2').textContent = record.title;
     find('.chapel-description').textContent = record.description;
@@ -217,9 +219,34 @@
     const receipt = find('[data-receipt]');
     receipt.append(icon('arrow-up-right'));
 
+    function displayAvailability({ registered, limit }) {
+      const remaining = Math.max(0, limit - registered);
+      const vacancies = remaining === 0 ? 'Lista completa' : remaining === 1 ? 'Resta 1 vaga' : `Restam ${remaining} vagas`;
+      availability.textContent = `${registered} de ${limit} nomes · ${vacancies}`;
+      form.hidden = remaining === 0;
+    }
+    async function checkAvailability() {
+      retry.hidden = true;
+      availability.textContent = 'Consultando vagas…';
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(endpoint, { credentials: 'omit', cache: 'no-store', signal: controller.signal });
+        if (!response.ok) throw new Error();
+        displayAvailability(await response.json());
+      } catch {
+        availability.textContent = 'Não foi possível consultar as vagas.';
+        retry.hidden = false;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    retry.addEventListener('click', checkAvailability);
+    checkAvailability();
+
     function step(name) {
       for (const section of panel.querySelectorAll('[data-chapel-step]')) section.hidden = section.dataset.chapelStep !== name;
-      const focus = name === 'entry' ? tribute : find(`[data-chapel-step="${name}"] h3`);
+      const focus = name === 'entry' ? (form.hidden ? availability : tribute) : find(`[data-chapel-step="${name}"] h3`);
       dialog.scrollTop = 0;
       focus.focus();
     }
@@ -246,11 +273,18 @@
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
       try {
-        const response = await fetch(`/api/public/projects/${encodeURIComponent(record.id)}/participation`, {
+        const response = await fetch(endpoint, {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
           body: JSON.stringify({ ...reviewed, submission_id: submissionId }), signal: controller.signal,
         });
         const result = await response.json();
+        if (typeof result.limit === 'number') {
+          displayAvailability(result);
+          if (response.status === 409 && form.hidden) {
+            if (panel.isConnected && dialog.open) step('entry');
+            return;
+          }
+        }
         if (!response.ok || !result.ok) throw new Error(result.error || 'Tente novamente em instantes.');
         find('[data-saved-tribute]').textContent = reviewed.tribute_name;
         const message = `Olá, Philippe! Já me inscrevi para contribuir com a Capela de Nossa Senhora de Fátima no Caminho da Fé. Meu nome é ${reviewed.name}. Para a homenagem, escolhi o nome “${reviewed.tribute_name}”. Vou enviar o comprovante do Pix por aqui. Você pode confirmar o recebimento, por favor?`;

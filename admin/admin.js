@@ -20,6 +20,8 @@
   const confirmationDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Fortaleza' });
   let csrf = '', data = {}, stats = {}, currentView = 'overview', editing = null, editorDirty = false, uploadBusy = false, deleting = false;
   let confirmationsRequest = null;
+  let projectSignupsRequest = null;
+  const signupDialog = $('#project-signups');
   async function api(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (options.method && options.method !== 'GET') headers.set('X-CSRF-Token', csrf);
@@ -34,13 +36,14 @@
     return payload;
   }
   function notify(text, error = false) { const el = $('#app-status'); el.textContent = text; el.classList.toggle('error', error); }
-  function showLogin() { $('#boot').hidden = true; $('#admin-view').hidden = true; $('#login-view').hidden = false; if ($('#editor').open) $('#editor').close(); if ($('#confirm-dialog').open) $('#confirm-dialog').close(); clearConfirmations(); data = {}; }
+  function showLogin() { $('#boot').hidden = true; $('#admin-view').hidden = true; $('#login-view').hidden = false; if ($('#editor').open) $('#editor').close(); if ($('#confirm-dialog').open) $('#confirm-dialog').close(); if (signupDialog.open) signupDialog.close(); clearConfirmations(); data = {}; }
   async function loadData() { data = await api('/api/admin/content'); }
   async function showAdmin() {
     await loadData();
     stats = await api('/api/admin/stats');
     $('#boot').hidden = true; $('#login-view').hidden = true; $('#admin-view').hidden = false;
     renderView(currentView);
+    openLinkedSignups();
   }
   function showEmpty(parent, title, description) { const el = node('div', null, 'empty'); el.append(node('h2', title), node('p', description)); parent.append(el); }
   function safeImage(value) { if (!value) return ''; try { const u = new URL(value, location.origin); return u.origin === location.origin && /^\/(assets|media)\//.test(u.pathname) ? u.href : u.protocol === 'https:' ? u.href : ''; } catch { return ''; } }
@@ -74,6 +77,69 @@
   function confirmationCount(total) {
     return `${total.toLocaleString('pt-BR')} ${total === 1 ? 'presença confirmada' : 'presenças confirmadas'}`;
   }
+  function signupRow(signup) {
+    const row = node('li'), identity = node('div');
+    identity.append(node('strong', signup.name), node('span', `Nome na capela: ${signup.tribute_name}`));
+    const time = node('time', confirmationDate.format(new Date(signup.created_at)));
+    time.dateTime = signup.created_at;
+    row.append(identity, time);
+    return row;
+  }
+  function openLinkedSignups() {
+    if ($('#admin-view').hidden) return;
+    const id = location.hash.match(/^#inscritos\/([a-f0-9]{24})$/)?.[1];
+    if (!id) {
+      if (signupDialog.open) signupDialog.close();
+      return;
+    }
+    const project = data.projects.find(item => item.id === id);
+    renderView('projects');
+    if (!project) {
+      if (signupDialog.open) signupDialog.close();
+      notify('O projeto deste link não está disponível.', true);
+      return;
+    }
+    openProjectSignups(project);
+  }
+  function openProjectSignups(project) {
+    signupDialog.dataset.projectId = project.id;
+    $('#signups-title').textContent = project.title;
+    history.replaceState(history.state, '', `#inscritos/${project.id}`);
+    if (!signupDialog.open) signupDialog.showModal();
+    signupDialog.scrollTop = 0;
+    loadProjectSignups();
+  }
+  async function loadProjectSignups() {
+    projectSignupsRequest?.abort();
+    const request = new AbortController();
+    projectSignupsRequest = request;
+    const list = $('#project-signup-list'), status = $('#project-signup-status'), refresh = $('#refresh-signups');
+    list.replaceChildren();
+    status.textContent = 'Carregando inscrições…';
+    refresh.disabled = true;
+    try {
+      const { signups } = await api(`/api/admin/projects/${encodeURIComponent(signupDialog.dataset.projectId)}/signups`, { signal: request.signal });
+      if (request.signal.aborted || !signupDialog.open) return;
+      list.replaceChildren(...signups.map(signupRow));
+      status.textContent = signups.length ? `${signups.length} ${signups.length === 1 ? 'pessoa inscrita' : 'pessoas inscritas'}` : 'Ninguém preencheu o formulário deste projeto ainda.';
+    } catch {
+      if (!request.signal.aborted && signupDialog.open) status.textContent = 'Não foi possível carregar os inscritos. Toque em Atualizar lista para tentar novamente.';
+    } finally {
+      if (projectSignupsRequest === request) refresh.disabled = false;
+    }
+  }
+  $('#close-signups').addEventListener('click', () => signupDialog.close());
+  $('#refresh-signups').addEventListener('click', loadProjectSignups);
+  signupDialog.addEventListener('close', () => {
+    if (signupDialog.open) return;
+    projectSignupsRequest?.abort();
+    projectSignupsRequest = null;
+    $('#project-signup-list').replaceChildren();
+    $('#project-signup-status').textContent = '';
+    if (location.hash === `#inscritos/${signupDialog.dataset.projectId}`) history.replaceState(history.state, '', location.pathname + location.search);
+    delete signupDialog.dataset.projectId;
+  });
+  window.addEventListener('hashchange', openLinkedSignups);
   function renderOwnerPhone(phone) {
     const parts = typeof phone === 'string' && phone.match(/^(\+55)?([1-9]\d)(\d{4,5})(\d{4})$/);
     if (!parts) return node('span', 'Telefone do proprietário não informado');
@@ -145,14 +211,7 @@
         group.append(node('h2', chapel?.title || 'Capela de Nossa Senhora de Fátima'),
           node('p', `${chapel_signups.length} ${chapel_signups.length === 1 ? 'inscrição' : 'inscrições'} · Philippe confere os comprovantes pelo WhatsApp.`, 'muted'));
         const signups = node('ul', null, 'rsvp-attendees');
-        for (const signup of chapel_signups) {
-          const entry = node('li'), identity = node('div');
-          identity.append(node('strong', signup.name), node('span', `Nome na capela: ${signup.tribute_name}`));
-          const date = node('time', confirmationDate.format(new Date(signup.created_at)));
-          date.dateTime = signup.created_at;
-          entry.append(identity, date);
-          signups.append(entry);
-        }
+        signups.append(...chapel_signups.map(signupRow));
         group.append(signups);
         list.append(group);
       }
@@ -208,6 +267,15 @@
       const detail = [item.city, company, currentView === 'projects' ? projectLabels[item.status] : '', currentView === 'events' && item.start_at ? item.start_at.slice(0,10).split('-').reverse().join('/') : ''].filter(Boolean).join(' · ');
       if (detail) copy.append(node('p', detail)); copy.append(node('span', item.published ? 'Publicado' : 'Rascunho', `badge${item.published ? ' live' : ''}`));
       const edit = node('button', 'Editar', 'secondary'); edit.type = 'button'; edit.setAttribute('aria-label', `Editar ${item.title}`); edit.addEventListener('click', () => openEditor(item)); card.append(copy, edit); list.append(card);
+      if (currentView === 'projects' && (item.participation_form || item.signup_count > 0)) {
+        card.classList.add('has-signups');
+        const signups = node('button', 'Ver inscritos', 'secondary signup-trigger');
+        signups.type = 'button';
+        signups.setAttribute('aria-haspopup', 'dialog');
+        signups.setAttribute('aria-label', `Ver inscritos de ${item.title}`);
+        signups.addEventListener('click', () => openProjectSignups(item));
+        card.append(signups);
+      }
     });
   }
   function field(name, label, value = '', options = {}) {

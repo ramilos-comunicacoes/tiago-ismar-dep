@@ -8,8 +8,8 @@
   <title>Tiago Ismar · Meu espaço</title>
   <link rel="icon" href="/assets/personal-favicon.svg?v=8">
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/admin/admin.css?v=3">
-  <script src="/admin/admin.js?v=4" defer></script>
+  <link rel="stylesheet" href="/admin/admin.css?v=4">
+  <script src="/admin/admin.js?v=5" defer></script>
 </head>
 <body>
   <a class="skip" href="#workspace">Ir para o conteúdo</a>
@@ -49,5 +49,9 @@
   <dialog id="editor" aria-labelledby="editor-title"><form id="editor-form"><header class="dialog-heading"><div><p class="eyebrow">CUIDAR DO CONTEÚDO</p><h2 id="editor-title">Novo cadastro</h2></div><button id="close-editor" type="button" class="round" aria-label="Fechar formulário"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header><div id="editor-fields" class="editor-fields"></div><p id="editor-error" class="error" role="alert"></p><footer class="editor-actions"><button id="delete-item" class="danger" type="button" hidden>Excluir cadastro</button><button class="primary" id="save-item" type="submit">Salvar cadastro</button></footer></form></dialog>
   <dialog id="confirm-dialog" aria-labelledby="confirm-title"><div class="confirm-content"><p class="eyebrow">CONFIRMAR EXCLUSÃO</p><h2 id="confirm-title">Excluir este cadastro?</h2><p id="confirm-text"></p><div class="confirm-actions"><button type="button" id="cancel-delete" class="secondary">Voltar</button><button type="button" id="confirm-delete" class="danger">Excluir</button></div></div></dialog>
   <datalist id="city-options"><option value="Tianguá"><option value="Ubajara"><option value="Viçosa do Ceará"><option value="Guaraciaba do Norte"><option value="São Benedito"><option value="Ibiapina"><option value="Croatá"><option value="Ipu"><option value="Ipueiras"><option value="Mucambo"><option value="Frecheirinha"><option value="Graça"><option value="Pacujá"><option value="Reriutaba"><option value="Pires Ferreira"><option value="Carnaubal"></datalist>
+  <dialog id="project-signups" aria-labelledby="signups-title">
+    <header class="dialog-heading"><div><p class="eyebrow">INSCRITOS NO PROJETO</p><h2 id="signups-title"></h2></div><button id="close-signups" class="round" type="button" aria-label="Fechar lista de inscritos"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header>
+    <div class="signups-body"><div class="rsvp-toolbar"><p id="project-signup-status" role="status"></p><button id="refresh-signups" type="button" class="secondary">Atualizar lista</button></div><ul id="project-signup-list" class="rsvp-attendees"></ul></div>
+  </dialog>
 </body>
 </html>

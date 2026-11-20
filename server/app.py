@@ -501,7 +501,21 @@ def create_app(test_config=None):
     @app.get("/api/admin/content")
     @authenticated
     def admin_content():
-        return jsonify(records())
+        content = records()
+        counts = dict(connection().execute("SELECT project_id, COUNT(*) FROM project_signups GROUP BY project_id"))
+        for project in content["projects"]:
+            project["signup_count"] = counts.get(project["id"], 0)
+        return jsonify(content)
+
+    @app.get("/api/admin/projects/<project_id>/signups")
+    @authenticated
+    def project_signup_list(project_id):
+        record("projects", project_id)
+        rows = connection().execute(
+            "SELECT name, tribute_name, created_at FROM project_signups WHERE project_id=? "
+            "ORDER BY created_at DESC, rowid DESC", (project_id,)
+        )
+        return jsonify(signups=[dict(row) for row in rows])
 
     @app.post("/api/public/projects/<project_id>/participation")
     def register_project_participant(project_id):

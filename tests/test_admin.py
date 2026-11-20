@@ -346,6 +346,15 @@ def test_chapel_signup_requires_published_project_and_preserves_reviewed_names(c
     assert public.post(endpoint, json={**signup, "name": "Outro"}, headers=origin).status_code == 409
     assert public.get("/api/admin/rsvps").status_code == 401
     assert "tribute_name" not in public.get("/api/public/content").get_data(as_text=True)
+    assert public.get(target + "/signups").status_code == 401
+    listing = admin.get(target + "/signups")
+    assert "no-store" in listing.headers["Cache-Control"]
+    [participant] = listing.json["signups"]
+    assert participant["name"] == signup["name"] and participant["tribute_name"] == signup["tribute_name"]
+    assert admin.get("/api/admin/content").json["projects"][0]["signup_count"] == 1
+    assert "signup_count" not in public.get("/api/public/content").json["projects"][0]
+    other = admin.post("/api/admin/projects", json={"title": "Outro", "city": "Tianguá"}, headers=headers).json["item"]
+    assert admin.get(f"/api/admin/projects/{other['id']}/signups").json == {"signups": []}
     deleted = admin.delete(target, json={"version": live["version"]}, headers=headers)
     assert deleted.status_code == 200
     assert public.post(endpoint, json=signup, headers=origin).status_code == 404

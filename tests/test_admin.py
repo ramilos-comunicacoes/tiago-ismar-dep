@@ -326,6 +326,33 @@ def test_rsvp_phone_migration_keeps_existing_confirmations(configured):
     assert admin.get("/api/admin/rsvps").json["events"][0]["registrations"] == [original]
 
 
+def test_chapel_signup_requires_published_project_and_preserves_reviewed_names(configured):
+    app, password = configured
+    admin, headers = login(app, password)
+    public = app.test_client()
+    project = {"title": "Capela", "city": "Caminho da Fé", "participation_form": "capela-de-fatima"}
+    item = admin.post("/api/admin/projects", json=project, headers=headers).json["item"]
+    assert admin.post("/api/admin/projects", json=project, headers=headers).status_code == 409
+    endpoint = f"/api/public/projects/{item['id']}/participation"
+    signup = {"name": "Ana Lívia", "tribute_name": "Família D’Ávila", "submission_id": "edb693d6-de4a-4379-84c9-fc3c0d0870bd"}
+    origin = {"Origin": "http://localhost"}
+    assert public.post(endpoint, json=signup, headers=origin).status_code == 404
+    target = "/api/admin/projects/" + item["id"]
+    live = admin.patch(target, json={"version": item["version"], "published": True}, headers=headers).json["item"]
+    assert public.post(endpoint, json=signup).status_code == 403
+    assert public.post(endpoint, json={**signup, "tribute_name": "   "}, headers=origin).status_code == 400
+    for _ in range(2):
+        assert public.post(endpoint, json=signup, headers=origin).json == {"ok": True}
+    assert public.post(endpoint, json={**signup, "name": "Outro"}, headers=origin).status_code == 409
+    assert public.get("/api/admin/rsvps").status_code == 401
+    assert "tribute_name" not in public.get("/api/public/content").get_data(as_text=True)
+    deleted = admin.delete(target, json={"version": live["version"]}, headers=headers)
+    assert deleted.status_code == 200
+    assert public.post(endpoint, json=signup, headers=origin).status_code == 404
+    [saved] = admin.get("/api/admin/rsvps").json["chapel_signups"]
+    assert saved["name"] == signup["name"] and saved["tribute_name"] == signup["tribute_name"]
+
+
 def test_event_registration_slug_validation_and_edits(configured):
     app, password = configured
     admin, headers = login(app, password)

@@ -123,6 +123,28 @@
 .event-rsvp-success .icon { color:var(--lime); }
 .event-rsvp-success h3 { font-size:20px; }
 .event-rsvp-success p { font-size:15px; }
+.chapel-registration { --chapel-gold:#ead4a5; }
+.chapel-heading .content-detail-eyebrow { margin-top:0; color:var(--chapel-gold); }
+.chapel-registration section { display:grid; gap:16px; margin-top:18px; }
+.chapel-registration section[hidden] { display:none; }
+.chapel-registration p { font-size:16px; line-height:1.55; overflow-wrap:anywhere; }
+.chapel-registration h3 { font:600 clamp(27px,4vw,38px)/1.12 var(--display); }
+.chapel-registration h3:focus { outline:none; }
+.chapel-figure { margin:0; }
+.chapel-figure img { display:block; width:100%; height:clamp(145px,25svh,225px); object-fit:cover; object-position:50% 53%; border-radius:4px 30px 4px 4px; }
+.chapel-figure figcaption { margin-top:5px; color:#cfccbc; font-size:15px; }
+.chapel-registration .event-rsvp { margin-top:0; }
+.chapel-review,.chapel-pix { display:grid; gap:8px; margin:0; padding:clamp(16px,4vw,26px); border:1px solid #ac956e8c; border-radius:5px 25px 5px 5px; background:#273328; }
+.chapel-review dt { color:var(--chapel-gold); font-size:15px; }
+.chapel-review dd { margin:0; font-size:17px; overflow-wrap:anywhere; white-space:pre-wrap; }
+.chapel-review [data-tribute] { padding-bottom:12px; font:500 clamp(29px,5vw,44px)/1.12 var(--display); }
+.chapel-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.chapel-actions button { flex:1 1 210px; }
+.chapel-secondary { min-height:48px; padding:10px 16px; border:1px solid var(--chapel-gold); border-radius:6px; color:var(--chapel-gold); background:transparent; font:inherit; font-size:15px; }
+.chapel-registration .event-rsvp-submit { background:var(--chapel-gold); }
+.chapel-pix p>strong { display:block; font:600 30px/1.2 var(--display); }
+.chapel-secondary:focus-visible,.chapel-registration a:focus-visible { outline:2px solid var(--chapel-gold); outline-offset:3px; }
+.chapel-registration [data-saved-tribute] { white-space:pre-wrap; }
 .catalog-title { margin-top:32px; padding-top:26px; border-top:1px solid #eeeee530; font:600 36px/1 var(--display); }
 .catalog-grid { display:grid; grid-template-columns:1fr; gap:24px; margin-top:24px; }
 .catalog-item { min-width:0; }

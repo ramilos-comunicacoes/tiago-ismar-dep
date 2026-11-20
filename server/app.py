@@ -35,7 +35,7 @@ FIELDS = {
     "companies": COMMON | {"category", "whatsapp", "url", "is_group"},
     "catalog_items": COMMON | {"company_id", "price_text", "url"},
     "events": COMMON | {"location", "start_at", "end_at", "url", "registration_slug"},
-    "projects": COMMON | {"status", "url"},
+    "projects": COMMON | {"status", "url", "participation_form"},
     "partners": {"title", "city", "published", "sort_order"},
 }
 SETTING_LIMITS = {
@@ -108,6 +108,14 @@ def initialize_database(data_dir):
             PRIMARY KEY(event_id, participant_key)
         );
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS project_signups (
+            project_id TEXT NOT NULL REFERENCES records(id),
+            submission_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            tribute_name TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY(project_id, submission_id)
+        );
         CREATE TABLE IF NOT EXISTS rate_limits (
             key TEXT NOT NULL, bucket INTEGER NOT NULL, hits INTEGER NOT NULL,
             expires_at INTEGER NOT NULL, PRIMARY KEY(key, bucket)
@@ -389,6 +397,15 @@ def create_app(test_config=None):
             raise APIError("Use o WhatsApp com país e DDD, somente números.")
         if kind == "projects" and data["status"] not in {"idea", "planning", "in_progress", "completed"}:
             raise APIError("Escolha uma situação válida para o projeto.")
+        if kind == "projects" and data["participation_form"]:
+            if data["participation_form"] != "capela-de-fatima":
+                raise APIError("Escolha um formulário de projeto válido.")
+            existing = connection().execute(
+                "SELECT id FROM records WHERE kind='projects' AND deleted=0 "
+                "AND json_extract(data, '$.participation_form')=?", (data["participation_form"],)
+            ).fetchone()
+            if existing and existing["id"] != item_id:
+                raise APIError("O formulário da capela já está vinculado a outro projeto.", 409)
         if kind == "catalog_items":
             company = record("companies", data["company_id"])
             if data["published"] and not json.loads(company["data"])["published"]:
@@ -486,6 +503,36 @@ def create_app(test_config=None):
     def admin_content():
         return jsonify(records())
 
+    @app.post("/api/public/projects/<project_id>/participation")
+    def register_project_participant(project_id):
+        require_origin()
+        rate_limit("project-signup", 30, 60)
+        data = payload()
+        if set(data) != {"submission_id", "name", "tribute_name"}:
+            raise APIError("Preencha seu nome e o nome para a homenagem.")
+        token = text_field(data["submission_id"], "inscrição", 36)
+        if not re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", token):
+            raise APIError("Reabra o formulário e tente novamente.")
+        name = text_field(data["name"], "seu nome", 120, required=True)
+        tribute = text_field(data["tribute_name"], "nome na capela", 120, required=True)
+        if any(not value.isprintable() for value in (name, tribute)):
+            raise APIError("Escreva cada nome em uma única linha.")
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            project = json.loads(record("projects", project_id)["data"])
+            if not project["published"] or project.get("participation_form") != "capela-de-fatima":
+                raise APIError("As inscrições para este projeto estão indisponíveis.", 404)
+            saved = db.execute(
+                "SELECT name, tribute_name FROM project_signups WHERE project_id=? AND submission_id=?",
+                (project_id, token),
+            ).fetchone()
+            if saved and tuple(saved) != (name, tribute):
+                raise APIError("Este pedido já foi registrado com outra grafia. Contate a organização.", 409)
+            if not saved:
+                db.execute("INSERT INTO project_signups VALUES (?,?,?,?,?)", (project_id, token, name, tribute, utc_now()))
+        return jsonify(ok=True)
+
     @app.get("/api/admin/rsvps")
     @authenticated
     def admin_rsvps():
@@ -515,7 +562,10 @@ def create_app(test_config=None):
                 events[event_id]["registrations"].append(
                     {key: row[key] for key in ("name", "enterprise", "created_at", "owner_phone")}
                 )
-        return jsonify(events=list(events.values()))
+        benefactors = connection().execute(
+            "SELECT name, tribute_name, created_at FROM project_signups ORDER BY created_at DESC, rowid DESC"
+        )
+        return jsonify(events=list(events.values()), chapel_signups=[dict(row) for row in benefactors])
 
     @app.post("/api/admin/<kind>")
     @authenticated

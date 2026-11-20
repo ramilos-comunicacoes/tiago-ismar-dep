@@ -14,7 +14,7 @@
   const pages = {
     overview: { title: 'Visão geral', description: 'Um olhar sobre o seu site.' },
     settings: { title: 'Textos e contato', description: 'A apresentação do site, do seu jeito.' },
-    rsvps: { title: 'Confirmações', description: 'Veja quem confirmou presença nos eventos do site.' },
+    rsvps: { title: 'Confirmações', description: 'Inscrições nos projetos e presenças nos eventos.' },
   };
   const projectLabels = { idea: 'Ideia', planning: 'Em planejamento', in_progress: 'Em andamento', completed: 'Concluído' };
   const confirmationDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Fortaleza' });
@@ -136,10 +136,27 @@
     status.classList.remove('error');
     status.textContent = 'Carregando confirmações…';
     try {
-      const { events } = await api('/api/admin/rsvps', { signal: request.signal });
+      const { events, chapel_signups = [] } = await api('/api/admin/rsvps', { signal: request.signal });
       if (request.signal.aborted) return;
       status.textContent = '';
-      if (!events.length) {
+      const chapel = (data.projects || []).find(project => project.participation_form === 'capela-de-fatima');
+      if (chapel || chapel_signups.length) {
+        const group = node('section', null, 'panel rsvp-group');
+        group.append(node('h2', chapel?.title || 'Capela de Nossa Senhora de Fátima'),
+          node('p', `${chapel_signups.length} ${chapel_signups.length === 1 ? 'inscrição' : 'inscrições'} · Philippe confere os comprovantes pelo WhatsApp.`, 'muted'));
+        const signups = node('ul', null, 'rsvp-attendees');
+        for (const signup of chapel_signups) {
+          const entry = node('li'), identity = node('div');
+          identity.append(node('strong', signup.name), node('span', `Nome na capela: ${signup.tribute_name}`));
+          const date = node('time', confirmationDate.format(new Date(signup.created_at)));
+          date.dateTime = signup.created_at;
+          entry.append(identity, date);
+          signups.append(entry);
+        }
+        group.append(signups);
+        list.append(group);
+      }
+      if (!events.length && !list.childElementCount) {
         showEmpty(list, 'Nenhum evento com confirmações', 'Ative o formulário de presença no cadastro de um evento.');
         return;
       }
@@ -262,7 +279,8 @@
     else fields.append(field('city', 'Cidade', values.city || 'Tianguá', { required: true, max: 100, wide: currentView === 'partners' }));
     if (currentView === 'companies') { fields.append(field('category', 'Categoria', values.category, { max: 100, placeholder: 'Ex.: hospedagem, gastronomia' }), field('whatsapp', 'WhatsApp da empresa', values.whatsapp, { type: 'tel', max: 20, note: 'Código do país, DDD e número.' })); }
     if (currentView === 'events') addEventFields(fields, values);
-    if (currentView === 'projects') fields.append(field('status', 'Etapa do projeto', values.status || 'idea', { choices: Object.entries(projectLabels) }));
+    if (currentView === 'projects') fields.append(field('status', 'Etapa do projeto', values.status || 'idea', { choices: Object.entries(projectLabels) }),
+      field('participation_form', 'Formulário de participação', values.participation_form, { wide: true, choices: [['', 'Sem formulário'], ['capela-de-fatima', 'Benfeitores da Capela de Nossa Senhora de Fátima']] }));
     if (currentView === 'catalog_items') fields.append(field('price_text', 'Preço ou condição', values.price_text, { max: 100, placeholder: 'Ex.: R$ 120 ou Sob consulta', wide: true }));
     if (currentView !== 'partners') { fields.append(field('description', 'Descrição', values.description, { multiline: true, wide: true })); fields.append(field('url', currentView === 'events' ? 'Link de inscrição ou informações' : 'Site ou link para saber mais', values.url, { type: 'url', wide: true, max: 1200, placeholder: 'https://' })); fields.append(imageField(values)); }
     if (currentView === 'companies') fields.append(checkbox('is_group', 'Faz parte do Grupo Ramilos', values.is_group, 'Marque apenas para empresas que pertencem ao grupo.'));

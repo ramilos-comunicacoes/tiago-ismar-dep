@@ -8,6 +8,7 @@
   const catalog = [];
   let opener;
   let activeRegistration = '';
+  const chapelHash = '#capela-de-fatima';
   // Display only the brand panel from the owner's unchanged WhatsApp captures.
   // Replacing an image in the CMS with a normal upload removes this presentation.
   const catalogLogos = new Map([
@@ -204,6 +205,79 @@
     return form;
   }
 
+  function chapelRegistration(record) {
+    const panel = document.querySelector('#chapel-registration').content.firstElementChild.cloneNode(true);
+    const find = (selector) => panel.querySelector(selector);
+    const form = find('form'), participant = form.elements.name, tribute = form.elements.tribute_name;
+    const edit = find('[data-edit]'), confirm = find('[data-confirm]'), status = find('[data-signup-status]');
+    let submissionId, reviewed;
+    find('h2').textContent = record.title;
+    find('.chapel-description').textContent = record.description;
+    for (const action of [form.querySelector('button'), confirm]) action.append(icon('arrow-right'));
+    const receipt = find('[data-receipt]');
+    receipt.append(icon('arrow-up-right'));
+
+    function step(name) {
+      for (const section of panel.querySelectorAll('[data-chapel-step]')) section.hidden = section.dataset.chapelStep !== name;
+      const focus = name === 'entry' ? tribute : find(`[data-chapel-step="${name}"] h3`);
+      dialog.scrollTop = 0;
+      focus.focus();
+    }
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      for (const field of [participant, tribute]) {
+        field.value = field.value.trim();
+        if (!field.reportValidity()) return;
+      }
+      if (!reviewed || reviewed.name !== participant.value || reviewed.tribute_name !== tribute.value) {
+        submissionId = crypto.randomUUID();
+      }
+      reviewed = { name: participant.value, tribute_name: tribute.value };
+      find('[data-participant]').textContent = reviewed.name;
+      find('[data-tribute]').textContent = reviewed.tribute_name;
+      status.textContent = '';
+      step('review');
+    });
+    edit.addEventListener('click', () => step('entry'));
+    confirm.addEventListener('click', async () => {
+      if (confirm.disabled) return;
+      confirm.disabled = edit.disabled = true;
+      status.textContent = 'Registrando sua inscrição…';
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(`/api/public/projects/${encodeURIComponent(record.id)}/participation`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
+          body: JSON.stringify({ ...reviewed, submission_id: submissionId }), signal: controller.signal,
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) throw new Error(result.error || 'Tente novamente em instantes.');
+        find('[data-saved-tribute]').textContent = reviewed.tribute_name;
+        const message = `Olá, Philippe! Já me inscrevi para contribuir com a Capela de Nossa Senhora de Fátima no Caminho da Fé. Meu nome é ${reviewed.name}. Para a homenagem, escolhi o nome “${reviewed.tribute_name}”. Vou enviar o comprovante do Pix por aqui. Você pode confirmar o recebimento, por favor?`;
+        receipt.href = `https://wa.me/5588992507312?text=${encodeURIComponent(message)}`;
+        if (panel.isConnected && dialog.open) step('payment');
+      } catch (error) {
+        status.textContent = error instanceof TypeError || error.name === 'AbortError'
+          ? 'Não foi possível verificar a inscrição. Confira sua conexão e tente novamente.' : error.message;
+      } finally {
+        clearTimeout(timer);
+        confirm.disabled = edit.disabled = false;
+      }
+    });
+    find('[data-copy]').addEventListener('click', async () => {
+      const key = find('[data-pix]'), copyStatus = find('[data-copy-status]');
+      try {
+        await navigator.clipboard.writeText(key.value);
+        copyStatus.textContent = 'Chave Pix copiada.';
+      } catch {
+        key.focus();
+        key.select();
+        copyStatus.textContent = 'A chave está selecionada. Use a opção Copiar do seu aparelho.';
+      }
+    });
+    return panel;
+  }
+
   function presentDetails(trigger) {
     opener = trigger;
     if (!dialog.open) dialog.showModal();
@@ -214,6 +288,13 @@
   function showDetails(record, kind, trigger) {
     if (!dialog || !detail) return;
     activeRegistration = kind === 'events' ? record.registration_slug || '' : '';
+    if (kind === 'projects' && record.participation_form === chapelHash.slice(1)) {
+      activeRegistration = chapelHash;
+      dialog.classList.add('is-registration');
+      detail.replaceChildren(chapelRegistration(record));
+      presentDetails(trigger);
+      return;
+    }
     dialog.classList.toggle('is-registration', Boolean(activeRegistration));
     detail.replaceChildren();
     const cover = activeRegistration ? null : imageNode(record.image, record.title, 'content-detail-cover');
@@ -269,6 +350,7 @@
   }
 
   function registrationHash() {
+    if (location.hash === chapelHash) return chapelHash;
     return location.hash.match(/^#inscricao=([a-z0-9]+(?:-[a-z0-9]+)*)$/)?.[1] || '';
   }
 
@@ -287,16 +369,17 @@
       return;
     }
     if (!dialog || !detail || (dialog.open && activeRegistration === slug)) return;
-    const events = collections.get('events');
-    if (!events) return;
-    document.querySelector('#eventos').scrollIntoView({ behavior: 'instant' });
-    const index = events.items.findIndex((event) => event.registration_slug === slug);
+    const chapel = slug === chapelHash, kind = chapel ? 'projects' : 'events';
+    const collection = collections.get(kind);
+    if (!collection) return;
+    document.querySelector(chapel ? '#projetos' : '#eventos').scrollIntoView({ behavior: 'instant' });
+    const index = collection.items.findIndex((item) => chapel ? item.participation_form === chapelHash.slice(1) : item.registration_slug === slug);
     if (index >= 0) {
-      const trigger = events.track.querySelectorAll('.content-card:not([data-clone]) button')[index];
-      showDetails(events.items[index], 'events', trigger);
+      const trigger = collection.track.querySelectorAll('.content-card:not([data-clone]) button')[index];
+      showDetails(collection.items[index], kind, trigger);
       return;
     }
-    registrationNotice(slug, 'Inscrição indisponível', 'Confira os encontros disponíveis na agenda.');
+    registrationNotice(slug, 'Inscrição indisponível', chapel ? 'Confira as iniciativas na seção de projetos.' : 'Confira os encontros disponíveis na agenda.');
     presentDetails();
   }
 
@@ -308,9 +391,10 @@
   });
   dialog?.addEventListener('close', () => {
     if (activeRegistration && registrationHash() === activeRegistration) {
-      history.replaceState(history.state, '', '#eventos');
+      history.replaceState(history.state, '', activeRegistration === chapelHash ? '#projetos' : '#eventos');
     }
     activeRegistration = '';
+    detail.replaceChildren();
     opener?.focus({ preventScroll: true });
     opener = null;
   });
@@ -321,6 +405,7 @@
     const button = element('button');
     button.type = 'button';
     const registration = kind === 'events' && record.registration_slug;
+    const chapel = kind === 'projects' && record.participation_form === chapelHash.slice(1);
     button.setAttribute('aria-label', registration ? `Confirmar presença: ${record.title}` : `Conheça ${record.title}`);
     const art = element('div', `content-card-art${kind === 'events' ? ' is-poster' : ''}`);
     const image = imageNode(record.image, '');
@@ -334,8 +419,8 @@
     if (kind === 'companies' && record.is_group) copy.append(element('span', 'content-card-detail', 'Grupo Ramilos'));
     const eventEnd = eventDate(record.end_at) || eventDate(record.start_at);
     if (kind === 'events' && eventEnd && eventEnd < new Date()) copy.append(element('span', 'content-card-detail', 'Já aconteceu'));
-    if (registration) {
-      const cta = element('span', 'event-card-rsvp', 'Confirmar presença');
+    if (registration || chapel) {
+      const cta = element('span', 'event-card-rsvp', chapel ? 'Participar da homenagem' : 'Confirmar presença');
       cta.append(icon('arrow-right'));
       copy.append(cta);
     }
@@ -353,6 +438,7 @@
         collection.track.scrollTo({ left: original.closest('.content-card').offsetLeft - origin, behavior: 'instant' });
       }
       if (registration) history.replaceState(history.state, '', `#inscricao=${registration}`);
+      if (chapel) history.replaceState(history.state, '', chapelHash);
       showDetails(record, kind, original || button);
     });
     article.append(button);

@@ -45,6 +45,9 @@
 .record.has-signups { flex-wrap: wrap; }
 .record .signup-trigger { width: 100%; }
 .signups-body { padding: 20px; overflow-wrap: anywhere; }
+#chapel-limit-form { margin-bottom: 20px; }
+#chapel-limit-form .limit-note, #chapel-limit-status { margin: 10px 0 0; font-size: 15px; }
+#chapel-limit-status:empty { display: none; }
 #signups-title { overflow-wrap: anywhere; }
 @media (min-width: 600px) {
   .record .signup-trigger { width: auto; }

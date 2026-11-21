@@ -222,6 +222,7 @@
     }
   ],
   "settings": {
+    "chapel_name_limit": "61",
     "site_intro": "Tem um pouco da serra em tudo que me inspira.",
     "contact_whatsapp": "5588992410722",
     "companies_title": "Conheça o Grupo Ramilos",

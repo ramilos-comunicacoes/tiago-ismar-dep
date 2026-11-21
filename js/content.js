@@ -220,10 +220,18 @@
     receipt.append(icon('arrow-up-right'));
 
     function displayAvailability({ registered, limit }) {
+      if (limit === null) {
+        availability.textContent = `${registered} ${registered === 1 ? 'nome inscrito' : 'nomes inscritos'} · Sem limite de nomes`;
+        form.hidden = false;
+        retry.hidden = true;
+        return;
+      }
       const remaining = Math.max(0, limit - registered);
       const vacancies = remaining === 0 ? 'Lista completa' : remaining === 1 ? 'Resta 1 vaga' : `Restam ${remaining} vagas`;
-      availability.textContent = `${registered} de ${limit} nomes · ${vacancies}`;
+      const count = registered > limit ? `${registered} nomes inscritos` : `${registered} de ${limit} ${limit === 1 ? 'nome' : 'nomes'}`;
+      availability.textContent = `${count} · ${vacancies}`;
       form.hidden = remaining === 0;
+      retry.hidden = !form.hidden;
     }
     async function checkAvailability() {
       retry.hidden = true;
@@ -278,7 +286,7 @@
           body: JSON.stringify({ ...reviewed, submission_id: submissionId }), signal: controller.signal,
         });
         const result = await response.json();
-        if (typeof result.limit === 'number') {
+        if (result.limit === null || typeof result.limit === 'number') {
           displayAvailability(result);
           if (response.status === 409 && form.hidden) {
             if (panel.isConnected && dialog.open) step('entry');

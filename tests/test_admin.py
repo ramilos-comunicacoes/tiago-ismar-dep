@@ -365,6 +365,43 @@ def test_chapel_signup_requires_published_project_and_preserves_reviewed_names(c
     assert saved["name"] == signup["name"] and saved["tribute_name"] == signup["tribute_name"]
 
 
+def test_chapel_limit_settings_apply_to_existing_signups_and_survive_restart(configured):
+    app, password = configured
+    admin, headers = login(app, password)
+    public = app.test_client()
+    project = {"title": "Capela", "city": "Tianguá", "participation_form": "capela-de-fatima", "published": True}
+    project_id = admin.post("/api/admin/projects", json=project, headers=headers).json["item"]["id"]
+    endpoint = f"/api/public/projects/{project_id}/participation"
+    listing = f"/api/admin/projects/{project_id}/signups"
+    settings = "/api/admin/settings"
+    origin = {"Origin": "http://localhost"}
+
+    def set_limit(value):
+        return admin.patch(settings, json={"chapel_name_limit": value}, headers=headers)
+
+    first = {"name": "Ana", "tribute_name": "Luz", "submission_id": str(uuid4())}
+    second = {"name": "Maria", "tribute_name": "Paz", "submission_id": str(uuid4())}
+    assert public.patch(settings, json={"chapel_name_limit": ""}, headers=origin).status_code == 401
+    for invalid in ["0", "-1", "1.5", "sim", "9007199254740992"]:
+        assert set_limit(invalid).status_code == 400
+    assert public.get(endpoint).json["limit"] == 61
+    assert set_limit("1").json["settings"]["chapel_name_limit"] == "1"
+    assert public.post(endpoint, json=first, headers=origin).status_code == 200
+    assert public.post(endpoint, json=second, headers=origin).status_code == 409
+    assert set_limit("").json["settings"]["chapel_name_limit"] == ""
+    assert admin.get(listing).json["limit"] is None
+    restarted = create_app({"TESTING": True, "DATA_DIR": app.config["DATA_DIR"]})
+    assert restarted.test_client().get(endpoint, base_url="https://tiagoismar.com").json == {"registered": 1, "limit": None}
+    assert public.post(endpoint, json=second, headers=origin).json == {"ok": True, "registered": 2, "limit": None}
+    assert set_limit("1").status_code == 200
+    assert public.post(endpoint, json={**second, "submission_id": str(uuid4())}, headers=origin).status_code == 409
+    assert public.post(endpoint, json=first, headers=origin).status_code == 200
+    assert set_limit("2").status_code == 200
+    assert len(admin.get(listing).json["signups"]) == 2
+    assert set_limit("3").status_code == 200
+    assert public.post(endpoint, json={**second, "submission_id": str(uuid4())}, headers=origin).status_code == 200
+
+
 def test_chapel_last_place_is_atomic_and_existing_signup_can_retry(configured):
     app, password = configured
     admin, headers = login(app, password)

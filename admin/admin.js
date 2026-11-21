@@ -13,7 +13,7 @@
   };
   const pages = {
     overview: { title: 'Visão geral', description: 'Um olhar sobre o seu site.' },
-    settings: { title: 'Textos e contato', description: 'A apresentação do site, do seu jeito.' },
+    settings: { title: 'Configurações', description: 'Gerencie as inscrições da capela, os textos e os contatos do site.' },
     rsvps: { title: 'Confirmações', description: 'Inscrições nos projetos e presenças nos eventos.' },
   };
   const projectLabels = { idea: 'Ideia', planning: 'Em planejamento', in_progress: 'Em andamento', completed: 'Concluído' };
@@ -122,9 +122,11 @@
       if (request.signal.aborted || !signupDialog.open) return;
       list.replaceChildren(...signups.map(signupRow));
       status.textContent = signups.length ? `${signups.length} ${signups.length === 1 ? 'pessoa inscrita' : 'pessoas inscritas'}` : 'Ninguém preencheu o formulário deste projeto ainda.';
+      if (limit === null) status.textContent = `${signups.length} ${signups.length === 1 ? 'nome inscrito' : 'nomes inscritos'} · Sem limite de nomes`;
       if (limit) {
         const remaining = Math.max(0, limit - signups.length);
-        status.textContent = `${signups.length} de ${limit} nomes · ${remaining === 0 ? 'Lista completa' : remaining === 1 ? 'Resta 1 vaga' : `Restam ${remaining} vagas`}`;
+        const count = signups.length > limit ? `${signups.length} nomes inscritos · Limite de ${limit}` : `${signups.length} de ${limit} ${limit === 1 ? 'nome' : 'nomes'}`;
+        status.textContent = `${count} · ${remaining === 0 ? 'Lista completa' : remaining === 1 ? 'Resta 1 vaga' : `Restam ${remaining} vagas`}`;
       }
     } catch {
       if (!request.signal.aborted && signupDialog.open) status.textContent = 'Não foi possível carregar os inscritos. Toque em Atualizar lista para tentar novamente.';
@@ -361,7 +363,40 @@
     $('#editor').showModal(); $('#editor').scrollTop = 0; $('#edit-title').focus({ preventScroll: true });
   }
   function closeEditor() { if (uploadBusy) return; if (editorDirty && !window.confirm('Sair sem salvar as alterações deste cadastro?')) return; $('#editor').close(); }
-  function fillSettings() { const values = data.settings || {}; $$('input[name],textarea[name]', $('#settings-form')).forEach(input => { input.value = values[input.name] || ''; }); }
+  function updateLimitField() {
+    const limited = $('#chapel-limit-mode').value === 'limited';
+    $('#chapel-limit-field').hidden = !limited;
+    $('#chapel-limit-value').disabled = !limited;
+  }
+  function fillSettings() {
+    const values = data.settings;
+    $$('input[name],textarea[name]', $('#settings-form')).forEach(input => { input.value = values[input.name] || ''; });
+    $('#chapel-limit-mode').value = values.chapel_name_limit === '' ? 'unlimited' : 'limited';
+    $('#chapel-limit-value').value = values.chapel_name_limit;
+    $('#chapel-limit-status').textContent = '';
+    updateLimitField();
+  }
+  $('#chapel-limit-mode').addEventListener('change', updateLimitField);
+  $('#chapel-limit-form').addEventListener('input', () => { $('#chapel-limit-status').textContent = ''; });
+  $('#chapel-limit-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const mode = $('#chapel-limit-mode'), input = $('#chapel-limit-value'), status = $('#chapel-limit-status');
+    const submit = $('button[type=submit]', event.target);
+    if (submit.disabled) return;
+    const value = mode.value === 'limited' ? String(input.valueAsNumber) : '';
+    submit.disabled = mode.disabled = input.disabled = true;
+    status.textContent = 'Salvando…';
+    try {
+      const result = await api('/api/admin/settings', { method: 'PATCH', body: { chapel_name_limit: value } });
+      data.settings = result.settings;
+      status.textContent = value ? `Limite de ${value} ${value === '1' ? 'nome' : 'nomes'} salvo.` : 'Inscrições abertas sem limite de nomes.';
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      submit.disabled = mode.disabled = false;
+      updateLimitField();
+    }
+  });
   $('#login-form').addEventListener('submit', async (event) => {
     event.preventDefault(); const button = $('button[type=submit]', event.target); button.disabled = true; $('#login-error').textContent = '';
     try { await api('/api/admin/session'); await api('/api/admin/login', { method: 'POST', body: { username: $('#username').value.trim(), password: $('#password').value } }); $('#password').value = ''; await showAdmin(); }

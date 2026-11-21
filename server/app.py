@@ -39,6 +39,7 @@ FIELDS = {
     "partners": {"title", "city", "published", "sort_order"},
 }
 SETTING_LIMITS = {
+    "chapel_name_limit": 16,
     "site_intro": 1500,
     "contact_whatsapp": 15,
     "catalog_url": 1200,
@@ -52,7 +53,6 @@ MAX_RECORDS = 5000
 REGISTRATION_SLUG_LIMIT = 80
 REGISTRATION_SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 REGISTRATION_FIELD_LIMIT = 120
-CHAPEL_NAME_LIMIT = 61
 Image.MAX_IMAGE_PIXELS = 20_000_000
 
 
@@ -518,8 +518,12 @@ def create_app(test_config=None):
         )
         result = {"signups": [dict(row) for row in rows]}
         if project.get("participation_form") == "capela-de-fatima":
-            result["limit"] = CHAPEL_NAME_LIMIT
+            result["limit"] = chapel_name_limit()
         return jsonify(result)
+
+    def chapel_name_limit():
+        value = connection().execute("SELECT value FROM settings WHERE key='chapel_name_limit'").fetchone()[0]
+        return int(value) if value else None
 
     def chapel_signup_count(project_id):
         project = json.loads(record("projects", project_id)["data"])
@@ -531,7 +535,7 @@ def create_app(test_config=None):
 
     @app.get("/api/public/projects/<project_id>/participation")
     def project_availability(project_id):
-        response = jsonify(registered=chapel_signup_count(project_id), limit=CHAPEL_NAME_LIMIT)
+        response = jsonify(registered=chapel_signup_count(project_id), limit=chapel_name_limit())
         response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -553,6 +557,7 @@ def create_app(test_config=None):
         with db:
             db.execute("BEGIN IMMEDIATE")
             registered = chapel_signup_count(project_id)
+            limit = chapel_name_limit()
             saved = db.execute(
                 "SELECT name, tribute_name FROM project_signups WHERE project_id=? AND submission_id=?",
                 (project_id, token),
@@ -560,12 +565,12 @@ def create_app(test_config=None):
             if saved and tuple(saved) != (name, tribute):
                 raise APIError("Este pedido já foi registrado com outra grafia. Contate a organização.", 409)
             if not saved:
-                if registered >= CHAPEL_NAME_LIMIT:
+                if limit is not None and registered >= limit:
                     return jsonify(error="Todas as vagas da capela foram preenchidas.",
-                                   registered=registered, limit=CHAPEL_NAME_LIMIT), 409
+                                   registered=registered, limit=limit), 409
                 db.execute("INSERT INTO project_signups VALUES (?,?,?,?,?)", (project_id, token, name, tribute, utc_now()))
                 registered += 1
-        return jsonify(ok=True, registered=registered, limit=CHAPEL_NAME_LIMIT)
+        return jsonify(ok=True, registered=registered, limit=limit)
 
     @app.get("/api/admin/rsvps")
     @authenticated
@@ -664,7 +669,10 @@ def create_app(test_config=None):
         if not data or set(data) - SETTING_LIMITS.keys():
             raise APIError("Confira os campos de configuração.")
         for key, value in data.items():
-            data[key] = text_field(value, key, SETTING_LIMITS[key], required=key != "catalog_url")
+            data[key] = text_field(value, key, SETTING_LIMITS[key], required=key not in {"catalog_url", "chapel_name_limit"})
+        limit = data.get("chapel_name_limit")
+        if limit and (not re.fullmatch(r"[1-9][0-9]*", limit) or int(limit) > 2**53 - 1):
+            raise APIError("Informe um número inteiro de nomes, a partir de 1.")
         if "catalog_url" in data:
             data["catalog_url"] = url_field(data["catalog_url"], "link do catálogo")
         if "contact_whatsapp" in data and not re.fullmatch(r"[1-9][0-9]{9,14}", data["contact_whatsapp"]):

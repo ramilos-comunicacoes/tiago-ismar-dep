@@ -18,6 +18,7 @@ import sqlite3
 import time
 import unicodedata
 from urllib.parse import urlsplit
+import uuid
 import warnings
 from zoneinfo import ZoneInfo
 
@@ -513,13 +514,95 @@ def create_app(test_config=None):
     def project_signup_list(project_id):
         project = json.loads(record("projects", project_id)["data"])
         rows = connection().execute(
-            "SELECT name, tribute_name, created_at FROM project_signups WHERE project_id=? "
+            "SELECT submission_id, project_id, name, tribute_name, created_at FROM project_signups WHERE project_id=? "
             "ORDER BY created_at DESC, rowid DESC", (project_id,)
         )
         result = {"signups": [dict(row) for row in rows]}
         if project.get("participation_form") == "capela-de-fatima":
             result["limit"] = chapel_name_limit()
         return jsonify(result)
+
+    @app.post("/api/admin/projects/<project_id>/signups")
+    @authenticated
+    def admin_create_project_signup(project_id):
+        record("projects", project_id)
+        data = payload()
+        if not isinstance(data, dict):
+            raise APIError("Dados inválidos.")
+        name = text_field(data.get("name", ""), "seu nome", 120, required=True)
+        tribute = text_field(data.get("tribute_name", ""), "nome na capela", 120, required=True)
+        if any(not value.isprintable() for value in (name, tribute)):
+            raise APIError("Escreva cada nome em uma única linha.")
+        token = str(uuid.uuid4())
+        created = utc_now()
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute(
+                "INSERT INTO project_signups(project_id, submission_id, name, tribute_name, created_at) VALUES (?,?,?,?,?)",
+                (project_id, token, name, tribute, created),
+            )
+            audit("create_signup", f"projects/{project_id}/signups/{token}")
+        return jsonify(
+            ok=True,
+            signup={
+                "submission_id": token,
+                "project_id": project_id,
+                "name": name,
+                "tribute_name": tribute,
+                "created_at": created,
+            },
+        ), 201
+
+    @app.patch("/api/admin/projects/<project_id>/signups/<submission_id>")
+    @authenticated
+    def admin_update_project_signup(project_id, submission_id):
+        data = payload()
+        if not isinstance(data, dict):
+            raise APIError("Dados inválidos.")
+        name = text_field(data.get("name", ""), "seu nome", 120, required=True)
+        tribute = text_field(data.get("tribute_name", ""), "nome na capela", 120, required=True)
+        if any(not value.isprintable() for value in (name, tribute)):
+            raise APIError("Escreva cada nome em uma única linha.")
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT submission_id, created_at FROM project_signups WHERE project_id=? AND submission_id=?",
+                (project_id, submission_id),
+            ).fetchone()
+            if not row:
+                raise APIError("Inscrição não encontrada.", 404)
+            db.execute(
+                "UPDATE project_signups SET name=?, tribute_name=? WHERE project_id=? AND submission_id=?",
+                (name, tribute, project_id, submission_id),
+            )
+            audit("update_signup", f"projects/{project_id}/signups/{submission_id}")
+        return jsonify(
+            ok=True,
+            signup={
+                "submission_id": submission_id,
+                "project_id": project_id,
+                "name": name,
+                "tribute_name": tribute,
+                "created_at": row["created_at"],
+            },
+        )
+
+    @app.delete("/api/admin/projects/<project_id>/signups/<submission_id>")
+    @authenticated
+    def admin_delete_project_signup(project_id, submission_id):
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            result = db.execute(
+                "DELETE FROM project_signups WHERE project_id=? AND submission_id=?",
+                (project_id, submission_id),
+            )
+            if not result.rowcount:
+                raise APIError("Inscrição não encontrada.", 404)
+            audit("delete_signup", f"projects/{project_id}/signups/{submission_id}")
+        return jsonify(ok=True)
 
     def chapel_name_limit():
         value = connection().execute("SELECT value FROM settings WHERE key='chapel_name_limit'").fetchone()[0]
@@ -577,7 +660,7 @@ def create_app(test_config=None):
     def admin_rsvps():
         rows = connection().execute(
             """
-            SELECT event.id, event.data, event.deleted, rsvp.name, rsvp.enterprise, rsvp.created_at, rsvp.owner_phone
+            SELECT event.id, event.data, event.deleted, rsvp.participant_key, rsvp.name, rsvp.enterprise, rsvp.created_at, rsvp.owner_phone
               FROM records AS event
               LEFT JOIN event_rsvps AS rsvp ON rsvp.event_id=event.id
              WHERE event.kind='events'
@@ -599,12 +682,126 @@ def create_app(test_config=None):
                 }
             if row["name"] is not None:
                 events[event_id]["registrations"].append(
-                    {key: row[key] for key in ("name", "enterprise", "created_at", "owner_phone")}
+                    {key: row[key] for key in ("participant_key", "name", "enterprise", "created_at", "owner_phone")}
                 )
         benefactors = connection().execute(
-            "SELECT name, tribute_name, created_at FROM project_signups ORDER BY created_at DESC, rowid DESC"
+            "SELECT submission_id, project_id, name, tribute_name, created_at FROM project_signups ORDER BY created_at DESC, rowid DESC"
         )
         return jsonify(events=list(events.values()), chapel_signups=[dict(row) for row in benefactors])
+
+    @app.post("/api/admin/events/<event_id>/rsvps")
+    @authenticated
+    def admin_create_event_rsvp(event_id):
+        record("events", event_id)
+        data = payload()
+        if not isinstance(data, dict):
+            raise APIError("Dados inválidos.")
+        name = " ".join(text_field(data.get("name", ""), "nome", REGISTRATION_FIELD_LIMIT, required=True).split())
+        enterprise = " ".join(
+            text_field(data.get("enterprise", ""), "empreendimento", REGISTRATION_FIELD_LIMIT, required=True).split()
+        )
+        phone = text_field(data.get("owner_phone", ""), "telefone do proprietário", 32, required=True)
+        phone = re.sub(r"[\s().-]+", "", phone)
+        if re.fullmatch(r"\+?55[1-9][0-9]{9,10}", phone):
+            phone = "+" + phone.lstrip("+")
+        elif not re.fullmatch(r"[1-9][0-9]{9,10}", phone):
+            raise APIError("Informe um telefone válido com DDD, como (88) 99999-9999.")
+        identity = [unicodedata.normalize("NFKC", value).casefold() for value in (name, enterprise)]
+        participant_key = digest(json.dumps(identity))
+        created = utc_now()
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            existing = db.execute(
+                "SELECT participant_key FROM event_rsvps WHERE event_id=? AND participant_key=?",
+                (event_id, participant_key),
+            ).fetchone()
+            if existing:
+                raise APIError("Já existe uma confirmação com este nome e empreendimento para este evento.", 409)
+            db.execute(
+                "INSERT INTO event_rsvps(event_id,participant_key,name,enterprise,created_at,owner_phone) "
+                "VALUES (?,?,?,?,?,?)",
+                (event_id, participant_key, name, enterprise, created, phone),
+            )
+            audit("create_rsvp", f"events/{event_id}/rsvps/{participant_key}")
+        return jsonify(
+            ok=True,
+            rsvp={
+                "event_id": event_id,
+                "participant_key": participant_key,
+                "name": name,
+                "enterprise": enterprise,
+                "created_at": created,
+                "owner_phone": phone,
+            },
+        ), 201
+
+    @app.patch("/api/admin/events/<event_id>/rsvps/<participant_key>")
+    @authenticated
+    def admin_update_event_rsvp(event_id, participant_key):
+        record("events", event_id)
+        data = payload()
+        if not isinstance(data, dict):
+            raise APIError("Dados inválidos.")
+        name = " ".join(text_field(data.get("name", ""), "nome", REGISTRATION_FIELD_LIMIT, required=True).split())
+        enterprise = " ".join(
+            text_field(data.get("enterprise", ""), "empreendimento", REGISTRATION_FIELD_LIMIT, required=True).split()
+        )
+        phone = text_field(data.get("owner_phone", ""), "telefone do proprietário", 32, required=True)
+        phone = re.sub(r"[\s().-]+", "", phone)
+        if re.fullmatch(r"\+?55[1-9][0-9]{9,10}", phone):
+            phone = "+" + phone.lstrip("+")
+        elif not re.fullmatch(r"[1-9][0-9]{9,10}", phone):
+            raise APIError("Informe um telefone válido com DDD, como (88) 99999-9999.")
+        identity = [unicodedata.normalize("NFKC", value).casefold() for value in (name, enterprise)]
+        new_key = digest(json.dumps(identity))
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute(
+                "SELECT participant_key, created_at FROM event_rsvps WHERE event_id=? AND participant_key=?",
+                (event_id, participant_key),
+            ).fetchone()
+            if not current:
+                raise APIError("Confirmação não encontrada.", 404)
+            if new_key != participant_key:
+                conflict = db.execute(
+                    "SELECT participant_key FROM event_rsvps WHERE event_id=? AND participant_key=?",
+                    (event_id, new_key),
+                ).fetchone()
+                if conflict:
+                    raise APIError("Já existe outra confirmação com este nome e empreendimento para este evento.", 409)
+            db.execute(
+                "UPDATE event_rsvps SET participant_key=?, name=?, enterprise=?, owner_phone=? WHERE event_id=? AND participant_key=?",
+                (new_key, name, enterprise, phone, event_id, participant_key),
+            )
+            audit("update_rsvp", f"events/{event_id}/rsvps/{new_key}")
+        return jsonify(
+            ok=True,
+            rsvp={
+                "event_id": event_id,
+                "participant_key": new_key,
+                "name": name,
+                "enterprise": enterprise,
+                "created_at": current["created_at"],
+                "owner_phone": phone,
+            },
+        )
+
+    @app.delete("/api/admin/events/<event_id>/rsvps/<participant_key>")
+    @authenticated
+    def admin_delete_event_rsvp(event_id, participant_key):
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            result = db.execute(
+                "DELETE FROM event_rsvps WHERE event_id=? AND participant_key=?",
+                (event_id, participant_key),
+            )
+            if not result.rowcount:
+                raise APIError("Confirmação não encontrada.", 404)
+            audit("delete_rsvp", f"events/{event_id}/rsvps/{participant_key}")
+        return jsonify(ok=True)
 
     @app.post("/api/admin/<kind>")
     @authenticated

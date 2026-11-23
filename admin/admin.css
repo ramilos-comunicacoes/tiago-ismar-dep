@@ -33,15 +33,24 @@
 .rsvp-attendees li {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 4px 16px;
+  gap: 10px 16px;
   border-top: 1px solid var(--line);
-  padding: 12px 0;
+  padding: 14px 0;
 }
 .rsvp-attendees li:last-child { padding-bottom: 0; }
-.rsvp-attendees span { display: block; color: var(--muted); }
-.rsvp-attendees time { color: var(--muted); }
+.rsvp-attendee-info { flex: 1 1 220px; min-width: 0; }
+.rsvp-attendee-info strong { display: block; font-size: 16px; color: var(--forest); }
+.rsvp-attendee-info span { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+.rsvp-attendees time { color: var(--muted); font-size: 14px; }
+.rsvp-item-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rsvp-action-btn { min-height: 44px; padding: 10px 16px; font-size: 14px; border-radius: 6px; font-weight: 650; }
+.rsvp-action-btn.danger { color: #872a24; background: #f8e9e5; }
+.rsvp-action-btn.danger:hover { background: #f3dad4; }
+.rsvp-group-actions, .toolbar-actions { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.single-column { grid-template-columns: 1fr !important; }
+#rsvp-dialog, #signup-dialog { max-width: 520px; }
 .record.has-signups { flex-wrap: wrap; }
 .record .signup-trigger { width: 100%; }
 .signups-body { padding: 20px; overflow-wrap: anywhere; }
@@ -49,6 +58,18 @@
 #chapel-limit-form .limit-note, #chapel-limit-status { margin: 10px 0 0; font-size: 15px; }
 #chapel-limit-status:empty { display: none; }
 #signups-title { overflow-wrap: anywhere; }
+@media (max-width: 599px) {
+  .rsvp-group-heading { flex-direction: column; align-items: stretch; gap: 14px; }
+  .rsvp-group-actions { width: 100%; justify-content: flex-start; }
+  .rsvp-group-actions button, .rsvp-group-actions a { flex: 1 1 auto; }
+  .toolbar-actions { width: 100%; justify-content: stretch; }
+  .toolbar-actions button { flex: 1 1 auto; }
+  .rsvp-attendees li { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .rsvp-item-actions { width: 100%; justify-content: flex-end; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e1e7db; }
+  .rsvp-item-actions button { flex: 1 1 auto; }
+  .editor-actions { display: flex; flex-direction: column-reverse; gap: 10px; }
+  .editor-actions button { width: 100%; }
+}
 @media (min-width: 600px) {
   .record .signup-trigger { width: auto; }
 }

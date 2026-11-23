@@ -544,3 +544,85 @@ def test_production_cookie_secure_and_untrusted_host_blocked(tmp_path):
     assert response.status_code == 200
     assert "Secure" in response.headers["Set-Cookie"]
     assert app.test_client().get("/api/admin/session", base_url="https://attacker.example").status_code == 400
+
+
+def test_admin_crud_project_signups_and_event_rsvps(configured):
+    app, password = configured
+    admin, headers = login(app, password)
+    public = app.test_client()
+
+    # 1. Project signups CRUD
+    project = {"title": "Capela de Fátima", "city": "Ibiapaba", "participation_form": "capela-de-fatima", "published": True}
+    p_item = admin.post("/api/admin/projects", json=project, headers=headers).json["item"]
+    p_id = p_item["id"]
+
+    # Public cannot mutate via admin routes
+    assert public.post(f"/api/admin/projects/{p_id}/signups", json={"name": "Joao", "tribute_name": "Familia"}).status_code == 401
+    assert public.patch(f"/api/admin/projects/{p_id}/signups/fake", json={"name": "Joao", "tribute_name": "Familia"}).status_code == 401
+    assert public.delete(f"/api/admin/projects/{p_id}/signups/fake").status_code == 401
+
+    # Admin Create project signup
+    res_create = admin.post(f"/api/admin/projects/{p_id}/signups", json={"name": "Carlos Silva", "tribute_name": "Família Silva"}, headers=headers)
+    assert res_create.status_code == 201
+    s_id = res_create.json["signup"]["submission_id"]
+    assert res_create.json["signup"]["name"] == "Carlos Silva"
+
+    # Validation
+    assert admin.post(f"/api/admin/projects/{p_id}/signups", json={"name": "", "tribute_name": "Ok"}, headers=headers).status_code == 400
+    assert admin.post(f"/api/admin/projects/{p_id}/signups", json={"name": "Ok\nQuebra", "tribute_name": "Ok"}, headers=headers).status_code == 400
+
+    # List verification
+    listing = admin.get(f"/api/admin/projects/{p_id}/signups").json
+    assert len(listing["signups"]) == 1
+    assert listing["signups"][0]["submission_id"] == s_id
+
+    # Admin Update project signup
+    res_update = admin.patch(f"/api/admin/projects/{p_id}/signups/{s_id}", json={"name": "Carlos Eduardo Silva", "tribute_name": "Homenagem Pais"}, headers=headers)
+    assert res_update.status_code == 200
+    assert res_update.json["signup"]["name"] == "Carlos Eduardo Silva"
+    assert res_update.json["signup"]["tribute_name"] == "Homenagem Pais"
+
+    # Admin Delete project signup
+    assert admin.delete(f"/api/admin/projects/{p_id}/signups/nonexistent", headers=headers).status_code == 404
+    assert admin.delete(f"/api/admin/projects/{p_id}/signups/{s_id}", headers=headers).status_code == 200
+    assert len(admin.get(f"/api/admin/projects/{p_id}/signups").json["signups"]) == 0
+
+    # 2. Event RSVPs CRUD
+    event = {"title": "Mesa Redonda da Serra", "city": "Ubajara", "registration_slug": "mesa-redonda", "published": True}
+    e_item = admin.post("/api/admin/events", json=event, headers=headers).json["item"]
+    e_id = e_item["id"]
+
+    # Public cannot mutate via admin routes
+    assert public.post(f"/api/admin/events/{e_id}/rsvps", json={"name": "A", "enterprise": "B", "owner_phone": "88999990000"}).status_code == 401
+    assert public.patch(f"/api/admin/events/{e_id}/rsvps/fake", json={"name": "A", "enterprise": "B", "owner_phone": "88999990000"}).status_code == 401
+    assert public.delete(f"/api/admin/events/{e_id}/rsvps/fake").status_code == 401
+
+    # Admin Create RSVP
+    res_rsvp = admin.post(f"/api/admin/events/{e_id}/rsvps", json={"name": "Marcos Costa", "enterprise": "Café Serrano", "owner_phone": "(88) 98888-7777"}, headers=headers)
+    assert res_rsvp.status_code == 201
+    pkey = res_rsvp.json["rsvp"]["participant_key"]
+    assert res_rsvp.json["rsvp"]["owner_phone"] == "88988887777"
+
+    # Duplicate create fails
+    assert admin.post(f"/api/admin/events/{e_id}/rsvps", json={"name": "Marcos Costa", "enterprise": "Café Serrano", "owner_phone": "(88) 98888-7777"}, headers=headers).status_code == 409
+
+    # Check listing
+    rsvps_list = admin.get("/api/admin/rsvps").json["events"]
+    [cur_event] = [ev for ev in rsvps_list if ev["id"] == e_id]
+    assert len(cur_event["registrations"]) == 1
+    assert cur_event["registrations"][0]["participant_key"] == pkey
+
+    # Admin Update RSVP
+    res_up_rsvp = admin.patch(f"/api/admin/events/{e_id}/rsvps/{pkey}", json={"name": "Marcos A. Costa", "enterprise": "Café Serrano Matriz", "owner_phone": "88999991111"}, headers=headers)
+    assert res_up_rsvp.status_code == 200
+    new_pkey = res_up_rsvp.json["rsvp"]["participant_key"]
+    assert res_up_rsvp.json["rsvp"]["name"] == "Marcos A. Costa"
+    assert res_up_rsvp.json["rsvp"]["owner_phone"] == "88999991111"
+
+    # Admin Delete RSVP
+    assert admin.delete(f"/api/admin/events/{e_id}/rsvps/nonexistent", headers=headers).status_code == 404
+    assert admin.delete(f"/api/admin/events/{e_id}/rsvps/{new_pkey}", headers=headers).status_code == 200
+    rsvps_list_after = admin.get("/api/admin/rsvps").json["events"]
+    [cur_event_after] = [ev for ev in rsvps_list_after if ev["id"] == e_id]
+    assert len(cur_event_after["registrations"]) == 0
+

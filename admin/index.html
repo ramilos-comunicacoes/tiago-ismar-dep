@@ -64,7 +64,30 @@
   <datalist id="city-options"><option value="Tianguá"><option value="Ubajara"><option value="Viçosa do Ceará"><option value="Guaraciaba do Norte"><option value="São Benedito"><option value="Ibiapina"><option value="Croatá"><option value="Ipu"><option value="Ipueiras"><option value="Mucambo"><option value="Frecheirinha"><option value="Graça"><option value="Pacujá"><option value="Reriutaba"><option value="Pires Ferreira"><option value="Carnaubal"></datalist>
   <dialog id="project-signups" aria-labelledby="signups-title">
     <header class="dialog-heading"><div><p class="eyebrow">INSCRITOS NO PROJETO</p><h2 id="signups-title"></h2></div><button id="close-signups" class="round" type="button" aria-label="Fechar lista de inscritos"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header>
-    <div class="signups-body"><div class="rsvp-toolbar"><p id="project-signup-status" role="status"></p><button id="refresh-signups" type="button" class="secondary">Atualizar lista</button></div><ul id="project-signup-list" class="rsvp-attendees"></ul></div>
+    <div class="signups-body"><div class="rsvp-toolbar"><p id="project-signup-status" role="status"></p><div class="toolbar-actions"><button id="add-project-signup" type="button" class="primary">Novo inscrito</button><button id="refresh-signups" type="button" class="secondary">Atualizar lista</button></div></div><ul id="project-signup-list" class="rsvp-attendees"></ul></div>
+  </dialog>
+  <dialog id="rsvp-dialog" aria-labelledby="rsvp-dialog-title">
+    <form id="rsvp-dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow" id="rsvp-dialog-kicker">CONFIRMAÇÃO DE PRESENÇA</p><h2 id="rsvp-dialog-title">Editar confirmação</h2></div><button id="close-rsvp-dialog" type="button" class="round" aria-label="Fechar formulário"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header>
+      <div class="editor-fields single-column">
+        <label for="rsvp-name">Nome do participante<input id="rsvp-name" name="name" required maxlength="120" placeholder="Nome completo"></label>
+        <label for="rsvp-enterprise">Empreendimento / Empresa<input id="rsvp-enterprise" name="enterprise" required maxlength="120" placeholder="Nome da empresa ou iniciativa"></label>
+        <label for="rsvp-phone">Telefone do proprietário<input id="rsvp-phone" name="owner_phone" type="tel" inputmode="tel" required maxlength="32" placeholder="(88) 99999-9999"></label>
+      </div>
+      <p id="rsvp-dialog-error" class="error" role="alert"></p>
+      <footer class="editor-actions"><button type="button" id="cancel-rsvp-dialog" class="secondary">Cancelar</button><button type="submit" id="save-rsvp-dialog" class="primary">Salvar confirmação</button></footer>
+    </form>
+  </dialog>
+  <dialog id="signup-dialog" aria-labelledby="signup-dialog-title">
+    <form id="signup-dialog-form">
+      <header class="dialog-heading"><div><p class="eyebrow" id="signup-dialog-kicker">INSCRIÇÃO DO PROJETO</p><h2 id="signup-dialog-title">Editar inscrição</h2></div><button id="close-signup-dialog" type="button" class="round" aria-label="Fechar formulário"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header>
+      <div class="editor-fields single-column">
+        <label for="signup-name">Nome do participante<input id="signup-name" name="name" required maxlength="120" placeholder="Nome de quem inscreveu"></label>
+        <label for="signup-tribute">Nome na homenagem / capela<input id="signup-tribute" name="tribute_name" required maxlength="120" placeholder="Nome que constará na homenagem"></label>
+      </div>
+      <p id="signup-dialog-error" class="error" role="alert"></p>
+      <footer class="editor-actions"><button type="button" id="cancel-signup-dialog" class="secondary">Cancelar</button><button type="submit" id="save-signup-dialog" class="primary">Salvar inscrição</button></footer>
+    </form>
   </dialog>
 </body>
 </html>

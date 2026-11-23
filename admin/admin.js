@@ -22,6 +22,11 @@
   let confirmationsRequest = null;
   let projectSignupsRequest = null;
   const signupDialog = $('#project-signups');
+  const rsvpDialog = $('#rsvp-dialog');
+  const signupDialogEl = $('#signup-dialog');
+  let currentRsvpTarget = null;
+  let currentSignupTarget = null;
+  let onConfirmAction = null;
   async function api(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (options.method && options.method !== 'GET') headers.set('X-CSRF-Token', csrf);
@@ -36,7 +41,7 @@
     return payload;
   }
   function notify(text, error = false) { const el = $('#app-status'); el.textContent = text; el.classList.toggle('error', error); }
-  function showLogin() { $('#boot').hidden = true; $('#admin-view').hidden = true; $('#login-view').hidden = false; if ($('#editor').open) $('#editor').close(); if ($('#confirm-dialog').open) $('#confirm-dialog').close(); if (signupDialog.open) signupDialog.close(); clearConfirmations(); data = {}; }
+  function showLogin() { $('#boot').hidden = true; $('#admin-view').hidden = true; $('#login-view').hidden = false; if ($('#editor').open) $('#editor').close(); if ($('#confirm-dialog').open) $('#confirm-dialog').close(); if (signupDialog.open) signupDialog.close(); if (rsvpDialog?.open) rsvpDialog.close(); if (signupDialogEl?.open) signupDialogEl.close(); clearConfirmations(); data = {}; }
   async function loadData() { data = await api('/api/admin/content'); }
   async function showAdmin() {
     await loadData();
@@ -77,13 +82,69 @@
   function confirmationCount(total) {
     return `${total.toLocaleString('pt-BR')} ${total === 1 ? 'presença confirmada' : 'presenças confirmadas'}`;
   }
-  function signupRow(signup) {
-    const row = node('li'), identity = node('div');
+  function askConfirmation(title, message, action, confirmLabel = 'Excluir') {
+    $('#confirm-title').textContent = title;
+    $('#confirm-text').textContent = message;
+    $('#confirm-delete').textContent = confirmLabel;
+    onConfirmAction = action;
+    if (!$('#confirm-dialog').open) $('#confirm-dialog').showModal();
+  }
+  function signupRow(signup, fallbackProjectId) {
+    const pId = signup.project_id || fallbackProjectId || signupDialog.dataset.projectId;
+    const row = node('li', null, 'rsvp-attendee-item'), identity = node('div', null, 'rsvp-attendee-info');
     identity.append(node('strong', signup.name), node('span', `Nome na capela: ${signup.tribute_name}`));
     const time = node('time', confirmationDate.format(new Date(signup.created_at)));
     time.dateTime = signup.created_at;
-    row.append(identity, time);
+    const actions = node('div', null, 'rsvp-item-actions');
+    const editBtn = node('button', 'Editar', 'subtle rsvp-action-btn');
+    editBtn.type = 'button';
+    editBtn.addEventListener('click', () => openSignupEditor(signup, pId));
+    const deleteBtn = node('button', 'Excluir', 'subtle danger rsvp-action-btn');
+    deleteBtn.type = 'button';
+    deleteBtn.addEventListener('click', () => deleteSignup(signup, pId));
+    actions.append(editBtn, deleteBtn);
+    row.append(identity, time, actions);
     return row;
+  }
+  function openSignupEditor(signup, projectId) {
+    currentSignupTarget = { mode: signup ? 'edit' : 'create', projectId, submissionId: signup?.submission_id, signup };
+    $('#signup-dialog-kicker').textContent = signup ? 'EDITAR INSCRIÇÃO' : 'NOVA INSCRIÇÃO';
+    $('#signup-dialog-title').textContent = signup ? 'Editar inscrito' : 'Nova inscrição';
+    $('#signup-name').value = signup?.name || '';
+    $('#signup-tribute').value = signup?.tribute_name || '';
+    $('#signup-dialog-error').textContent = '';
+    $('#save-signup-dialog').disabled = false;
+    if (!signupDialogEl.open) signupDialogEl.showModal();
+    $('#signup-name').focus();
+  }
+  function deleteSignup(signup, projectId) {
+    askConfirmation('Excluir inscrição?', `A inscrição de “${signup.name}” (Homenagem: “${signup.tribute_name}”) será removida do projeto.`, async () => {
+      await api(`/api/admin/projects/${encodeURIComponent(projectId)}/signups/${encodeURIComponent(signup.submission_id)}`, { method: 'DELETE' });
+      notify('Inscrição excluída com sucesso.');
+      if (signupDialog.open) loadProjectSignups();
+      if (!$('#rsvps-panel').hidden) loadConfirmations();
+      await loadData();
+      if (currentView === 'projects') renderView('projects');
+    });
+  }
+  function openRsvpEditor(registration, eventId) {
+    currentRsvpTarget = { mode: registration ? 'edit' : 'create', eventId, participantKey: registration?.participant_key, registration };
+    $('#rsvp-dialog-kicker').textContent = registration ? 'EDITAR CONFIRMAÇÃO' : 'NOVA CONFIRMAÇÃO';
+    $('#rsvp-dialog-title').textContent = registration ? 'Editar presença' : 'Confirmar presença';
+    $('#rsvp-name').value = registration?.name || '';
+    $('#rsvp-enterprise').value = registration?.enterprise || '';
+    $('#rsvp-phone').value = registration?.owner_phone || '';
+    $('#rsvp-dialog-error').textContent = '';
+    $('#save-rsvp-dialog').disabled = false;
+    if (!rsvpDialog.open) rsvpDialog.showModal();
+    $('#rsvp-name').focus();
+  }
+  function deleteRsvp(registration, eventId) {
+    askConfirmation('Excluir confirmação?', `A confirmação de “${registration.name}” (${registration.enterprise}) será removida deste evento.`, async () => {
+      await api(`/api/admin/events/${encodeURIComponent(eventId)}/rsvps/${encodeURIComponent(registration.participant_key)}`, { method: 'DELETE' });
+      notify('Confirmação excluída com sucesso.');
+      loadConfirmations();
+    });
   }
   function openLinkedSignups() {
     if ($('#admin-view').hidden) return;
@@ -120,7 +181,7 @@
     try {
       const { signups, limit } = await api(`/api/admin/projects/${encodeURIComponent(signupDialog.dataset.projectId)}/signups`, { signal: request.signal });
       if (request.signal.aborted || !signupDialog.open) return;
-      list.replaceChildren(...signups.map(signupRow));
+      list.replaceChildren(...signups.map(signup => signupRow(signup, signupDialog.dataset.projectId)));
       status.textContent = signups.length ? `${signups.length} ${signups.length === 1 ? 'pessoa inscrita' : 'pessoas inscritas'}` : 'Ninguém preencheu o formulário deste projeto ainda.';
       if (limit === null) status.textContent = `${signups.length} ${signups.length === 1 ? 'nome inscrito' : 'nomes inscritos'} · Sem limite de nomes`;
       if (limit) {
@@ -166,13 +227,19 @@
     group.setAttribute('aria-labelledby', title.id);
     info.append(title, node('p', confirmationCount(registrations.length), 'muted'));
     head.append(info);
+    const headActions = node('div', null, 'rsvp-group-actions');
+    const addBtn = node('button', 'Adicionar presença', 'secondary');
+    addBtn.type = 'button';
+    addBtn.addEventListener('click', () => openRsvpEditor(null, event.id));
+    headActions.append(addBtn);
     if (event.registration_slug && (data.events || []).some(item => item.id === event.id && item.published)) {
-      const link = node('a', 'Abrir formulário', 'secondary');
+      const link = node('a', 'Abrir formulário', 'subtle');
       link.href = `/#inscricao=${encodeURIComponent(event.registration_slug)}`;
       link.target = '_blank';
       link.rel = 'noopener';
-      head.append(link);
+      headActions.append(link);
     }
+    head.append(headActions);
     group.append(head);
     if (!registrations.length) {
       group.append(node('p', 'Ainda não há confirmações para este evento.', 'muted'));
@@ -180,8 +247,8 @@
     }
     const list = node('ul', null, 'rsvp-attendees');
     registrations.forEach(registration => {
-      const row = node('li');
-      const identity = node('div');
+      const row = node('li', null, 'rsvp-attendee-item');
+      const identity = node('div', null, 'rsvp-attendee-info');
       identity.append(
         node('strong', registration.name),
         node('span', registration.enterprise),
@@ -194,6 +261,15 @@
         time.dateTime = date.toISOString();
         row.append(time);
       }
+      const actions = node('div', null, 'rsvp-item-actions');
+      const editBtn = node('button', 'Editar', 'subtle rsvp-action-btn');
+      editBtn.type = 'button';
+      editBtn.addEventListener('click', () => openRsvpEditor(registration, event.id));
+      const deleteBtn = node('button', 'Excluir', 'subtle danger rsvp-action-btn');
+      deleteBtn.type = 'button';
+      deleteBtn.addEventListener('click', () => deleteRsvp(registration, event.id));
+      actions.append(editBtn, deleteBtn);
+      row.append(actions);
       list.append(row);
     });
     group.append(list);
@@ -214,10 +290,22 @@
       const chapel = (data.projects || []).find(project => project.participation_form === 'capela-de-fatima');
       if (chapel || chapel_signups.length) {
         const group = node('section', null, 'panel rsvp-group');
-        group.append(node('h2', chapel?.title || 'Capela de Nossa Senhora de Fátima'),
-          node('p', `${chapel_signups.length} ${chapel_signups.length === 1 ? 'inscrição' : 'inscrições'} · Philippe confere os comprovantes pelo WhatsApp.`, 'muted'));
+        const head = node('div', null, 'rsvp-group-heading');
+        const info = node('div');
+        info.append(
+          node('h2', chapel?.title || 'Capela de Nossa Senhora de Fátima'),
+          node('p', `${chapel_signups.length} ${chapel_signups.length === 1 ? 'inscrição' : 'inscrições'} · Philippe confere os comprovantes pelo WhatsApp.`, 'muted')
+        );
+        head.append(info);
+        if (chapel) {
+          const addBtn = node('button', 'Nova inscrição', 'secondary');
+          addBtn.type = 'button';
+          addBtn.addEventListener('click', () => openSignupEditor(null, chapel.id));
+          head.append(addBtn);
+        }
+        group.append(head);
         const signups = node('ul', null, 'rsvp-attendees');
-        signups.append(...chapel_signups.map(signupRow));
+        signups.append(...chapel_signups.map(signup => signupRow(signup, chapel?.id)));
         group.append(signups);
         list.append(group);
       }
@@ -423,9 +511,116 @@
     catch (error) { $('#editor-error').textContent = error.message; }
     finally { button.disabled = false; }
   });
-  $('#delete-item').addEventListener('click', () => { if (!editing) return; $('#confirm-text').textContent = `“${editing.title}” deixará de aparecer no painel e no site. ${currentView === 'companies' ? 'Os itens do catálogo desta empresa também serão excluídos.' : ''}`; $('#confirm-dialog').showModal(); });
-  $('#cancel-delete').addEventListener('click', () => $('#confirm-dialog').close());
-  $('#confirm-delete').addEventListener('click', async () => { if (deleting || !editing) return; deleting = true; $('#confirm-delete').disabled = true; try { await api(`/api/admin/${currentView}/${encodeURIComponent(editing.id)}`, { method: 'DELETE', body: { version: editing.version } }); $('#confirm-dialog').close(); $('#editor').close(); editorDirty = false; await loadData(); renderView(currentView); notify('Cadastro excluído.'); } catch (error) { $('#confirm-dialog').close(); $('#editor-error').textContent = error.message; } finally { deleting = false; $('#confirm-delete').disabled = false; } });
+  $('#close-rsvp-dialog').addEventListener('click', () => rsvpDialog.close());
+  $('#cancel-rsvp-dialog').addEventListener('click', () => rsvpDialog.close());
+  $('#rsvp-dialog-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentRsvpTarget) return;
+    const saveBtn = $('#save-rsvp-dialog');
+    saveBtn.disabled = true;
+    $('#rsvp-dialog-error').textContent = '';
+    const body = {
+      name: $('#rsvp-name').value.trim(),
+      enterprise: $('#rsvp-enterprise').value.trim(),
+      owner_phone: $('#rsvp-phone').value.trim(),
+    };
+    try {
+      if (currentRsvpTarget.mode === 'create') {
+        await api(`/api/admin/events/${encodeURIComponent(currentRsvpTarget.eventId)}/rsvps`, { method: 'POST', body });
+        notify('Presença adicionada com sucesso.');
+      } else {
+        await api(`/api/admin/events/${encodeURIComponent(currentRsvpTarget.eventId)}/rsvps/${encodeURIComponent(currentRsvpTarget.participantKey)}`, { method: 'PATCH', body });
+        notify('Confirmação atualizada com sucesso.');
+      }
+      rsvpDialog.close();
+      loadConfirmations();
+    } catch (err) {
+      $('#rsvp-dialog-error').textContent = err.message;
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  $('#close-signup-dialog').addEventListener('click', () => signupDialogEl.close());
+  $('#cancel-signup-dialog').addEventListener('click', () => signupDialogEl.close());
+  $('#signup-dialog-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentSignupTarget) return;
+    const saveBtn = $('#save-signup-dialog');
+    saveBtn.disabled = true;
+    $('#signup-dialog-error').textContent = '';
+    const body = {
+      name: $('#signup-name').value.trim(),
+      tribute_name: $('#signup-tribute').value.trim(),
+    };
+    try {
+      if (currentSignupTarget.mode === 'create') {
+        await api(`/api/admin/projects/${encodeURIComponent(currentSignupTarget.projectId)}/signups`, { method: 'POST', body });
+        notify('Inscrição adicionada com sucesso.');
+      } else {
+        await api(`/api/admin/projects/${encodeURIComponent(currentSignupTarget.projectId)}/signups/${encodeURIComponent(currentSignupTarget.submissionId)}`, { method: 'PATCH', body });
+        notify('Inscrição atualizada com sucesso.');
+      }
+      signupDialogEl.close();
+      if (signupDialog.open) loadProjectSignups();
+      if (!$('#rsvps-panel').hidden) loadConfirmations();
+      await loadData();
+      if (currentView === 'projects') renderView('projects');
+    } catch (err) {
+      $('#signup-dialog-error').textContent = err.message;
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  $('#add-project-signup').addEventListener('click', () => {
+    if (!signupDialog.dataset.projectId) return;
+    openSignupEditor(null, signupDialog.dataset.projectId);
+  });
+
+  $('#delete-item').addEventListener('click', () => {
+    if (!editing) return;
+    onConfirmAction = null;
+    $('#confirm-title').textContent = 'Excluir este cadastro?';
+    $('#confirm-text').textContent = `“${editing.title}” deixará de aparecer no painel e no site. ${currentView === 'companies' ? 'Os itens do catálogo desta empresa também serão excluídos.' : ''}`;
+    $('#confirm-delete').textContent = 'Excluir';
+    $('#confirm-dialog').showModal();
+  });
+  $('#cancel-delete').addEventListener('click', () => {
+    onConfirmAction = null;
+    $('#confirm-dialog').close();
+  });
+  $('#confirm-dialog').addEventListener('close', () => {
+    onConfirmAction = null;
+    $('#confirm-delete').textContent = 'Excluir';
+  });
+  $('#confirm-delete').addEventListener('click', async () => {
+    if (deleting) return;
+    deleting = true;
+    $('#confirm-delete').disabled = true;
+    try {
+      if (onConfirmAction) {
+        await onConfirmAction();
+        $('#confirm-dialog').close();
+      } else if (editing) {
+        await api(`/api/admin/${currentView}/${encodeURIComponent(editing.id)}`, { method: 'DELETE', body: { version: editing.version } });
+        $('#confirm-dialog').close();
+        $('#editor').close();
+        editorDirty = false;
+        await loadData();
+        renderView(currentView);
+        notify('Cadastro excluído.');
+      }
+    } catch (error) {
+      $('#confirm-dialog').close();
+      if ($('#editor').open) $('#editor-error').textContent = error.message;
+      else notify(error.message, true);
+    } finally {
+      deleting = false;
+      $('#confirm-delete').disabled = false;
+      onConfirmAction = null;
+    }
+  });
   $('#settings-form').addEventListener('submit', async (event) => { event.preventDefault(); const button = $('button[type=submit]', event.target); button.disabled = true; const payload = Object.fromEntries(new FormData(event.target)); payload.contact_whatsapp = payload.contact_whatsapp.replace(/\D/g, ''); try { const result = await api('/api/admin/settings', { method: 'PATCH', body: payload }); data.settings = result.settings; notify('Textos e contato atualizados.'); } catch (error) { notify(error.message, true); } finally { button.disabled = false; } });
   window.addEventListener('beforeunload', event => { if ($('#editor').open && editorDirty) { event.preventDefault(); event.returnValue = ''; } });
   (async () => { try { const session = await api('/api/admin/session'); if (session.authenticated) await showAdmin(); else showLogin(); } catch { showLogin(); $('#login-error').textContent = 'O painel ainda não está disponível. Confira se o serviço de administração foi instalado no servidor.'; } })();

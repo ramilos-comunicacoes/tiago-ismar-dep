@@ -21,6 +21,8 @@
   let csrf = '', data = {}, stats = {}, currentView = 'overview', editing = null, editorDirty = false, uploadBusy = false, deleting = false;
   let confirmationsRequest = null;
   let projectSignupsRequest = null;
+  let latestConfirmations = null;
+  let currentProjectSignups = null;
   const signupDialog = $('#project-signups');
   const rsvpDialog = $('#rsvp-dialog');
   const signupDialogEl = $('#signup-dialog');
@@ -181,6 +183,11 @@
     try {
       const { signups, limit } = await api(`/api/admin/projects/${encodeURIComponent(signupDialog.dataset.projectId)}/signups`, { signal: request.signal });
       if (request.signal.aborted || !signupDialog.open) return;
+      currentProjectSignups = {
+        signups,
+        limit,
+        projectTitle: $('#signups-title').textContent || 'Projeto'
+      };
       list.replaceChildren(...signups.map(signup => signupRow(signup, signupDialog.dataset.projectId)));
       status.textContent = signups.length ? `${signups.length} ${signups.length === 1 ? 'pessoa inscrita' : 'pessoas inscritas'}` : 'Ninguém preencheu o formulário deste projeto ainda.';
       if (limit === null) status.textContent = `${signups.length} ${signups.length === 1 ? 'nome inscrito' : 'nomes inscritos'} · Sem limite de nomes`;
@@ -205,8 +212,523 @@
     $('#project-signup-status').textContent = '';
     if (location.hash === `#inscritos/${signupDialog.dataset.projectId}`) history.replaceState(history.state, '', location.pathname + location.search);
     delete signupDialog.dataset.projectId;
+    currentProjectSignups = null;
   });
   window.addEventListener('hashchange', openLinkedSignups);
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+  function formatPhone(phone) {
+    if (!phone) return '—';
+    const parts = typeof phone === 'string' && phone.match(/^(\+55)?([1-9]\d)(\d{4,5})(\d{4})$/);
+    if (!parts) return phone;
+    const [, country, area, prefix, suffix] = parts;
+    return `${country ? country + ' ' : ''}(${area}) ${prefix}-${suffix}`;
+  }
+  function formatReportDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return confirmationDate.format(d);
+  }
+  function printPdfReport(report) {
+    const win = window.open('', '_blank');
+    if (!win) {
+      notify('A janela do relatório foi bloqueada pelo navegador. Permita pop-ups para gerar o PDF.', true);
+      return;
+    }
+    const now = new Date();
+    const emittedAt = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeStyle: 'short' }).format(now);
+    const metaHtml = (report.meta || []).map(item => `
+      <div class="report-meta-item">
+        <dt>${escapeHtml(item.label)}</dt>
+        <dd>${escapeHtml(item.value)}</dd>
+      </div>
+    `).join('');
+    const sectionsHtml = (report.sections || []).map(section => {
+      const heading = section.heading ? `<h2 class="section-title">${escapeHtml(section.heading)}</h2>` : '';
+      const note = section.note ? `<p class="section-note">${escapeHtml(section.note)}</p>` : '';
+      if (!section.rows || !section.rows.length) {
+        return `
+          <div class="report-section">
+            ${heading}
+            ${note}
+            <div class="empty-state">Nenhum registro encontrado para esta seção.</div>
+          </div>
+        `;
+      }
+      const ths = (section.columns || []).map(col => `<th>${escapeHtml(col)}</th>`).join('');
+      const trs = section.rows.map(row => {
+        const tds = row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('');
+        return `<tr>${tds}</tr>`;
+      }).join('');
+      return `
+        <div class="report-section">
+          ${heading}
+          ${note}
+          <table class="report-table">
+            <thead><tr>${ths}</tr></thead>
+            <tbody>${trs}</tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+
+    const docHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(report.title)} · Relatório Tiago Ismar</title>
+  <style>
+    :root {
+      --forest: #13231b;
+      --lime: #536f1c;
+      --ink: #172a20;
+      --muted: #57695c;
+      --line: #d8dfd2;
+      --surface: #f9faf6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: #eef2e7;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .report-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 24px;
+      background: var(--forest);
+      color: #eeeee5;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+    }
+    .report-toolbar-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 13px;
+    }
+    .report-toolbar-info strong { color: #d5eb64; font-size: 14px; }
+    .report-toolbar-tip { font-size: 12px; opacity: 0.85; }
+    .report-toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+    .btn-primary { background: #d5eb64; color: #13231b; }
+    .btn-primary:hover { background: #e3f48f; }
+    .btn-secondary { background: #263e2e; color: #eeeee5; }
+    .btn-secondary:hover { background: #33503b; }
+    .report-container {
+      max-width: 900px;
+      margin: 28px auto 60px;
+      background: #ffffff;
+      padding: 36px 44px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid var(--line);
+    }
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--forest);
+      margin-bottom: 24px;
+    }
+    .report-brand-name {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: var(--forest);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .report-brand-sub {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin-top: 5px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .report-header-right { text-align: right; }
+    .report-kicker {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--lime);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .report-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--forest);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .report-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .report-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+    }
+    .report-meta-item dt {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .report-meta-item dd {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 2px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--forest);
+      margin: 24px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--line);
+    }
+    .section-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    table.report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+    table.report-table th, table.report-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+    table.report-table thead th {
+      background: #eef2e7;
+      color: var(--forest);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid #ccd6c2;
+    }
+    table.report-table tbody tr:nth-child(even) {
+      background: #fbfcf8;
+    }
+    table.report-table tr {
+      page-break-inside: avoid;
+    }
+    .empty-state {
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+      background: var(--surface);
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .report-footer {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #111111 !important;
+        font-size: 11pt !important;
+      }
+      .report-toolbar {
+        display: none !important;
+      }
+      .report-container {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      table.report-table thead {
+        display: table-header-group;
+      }
+      table.report-table tr {
+        page-break-inside: avoid;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 15mm 12mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-toolbar">
+    <div class="report-toolbar-info">
+      <strong>Relatório em PDF · Prévia de Impressão</strong>
+      <span class="report-toolbar-tip">Para salvar em arquivo: na tela de impressão, selecione o destino <strong>“Salvar como PDF”</strong>.</span>
+    </div>
+    <div class="report-toolbar-actions">
+      <button type="button" class="btn btn-primary" onclick="window.print()">Salvar como PDF / Imprimir</button>
+      <button type="button" class="btn btn-secondary" onclick="window.close()">Fechar</button>
+    </div>
+  </div>
+  <div class="report-container">
+    <header class="report-header">
+      <div>
+        <div class="report-brand-name">Tiago Ismar</div>
+        <div class="report-brand-sub">Da Ibiapaba. De perto. · Painel Administrativo</div>
+      </div>
+      <div class="report-header-right">
+        <div class="report-kicker">${escapeHtml(report.kicker || 'RELATÓRIO OFICIAL')}</div>
+        <div class="report-date">Emitido em ${escapeHtml(emittedAt)}</div>
+      </div>
+    </header>
+    <main>
+      <h1 class="report-title">${escapeHtml(report.title)}</h1>
+      ${report.subtitle ? `<p class="report-subtitle">${escapeHtml(report.subtitle)}</p>` : ''}
+      ${report.meta && report.meta.length ? `<dl class="report-meta-grid">${metaHtml}</dl>` : ''}
+      ${sectionsHtml}
+    </main>
+    <footer class="report-footer">
+      <span>tiagoismar.com · Painel de Gestão</span>
+      <span>${escapeHtml(report.footerNote || 'Documento confidencial gerado para controle interno.')}</span>
+    </footer>
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        try { window.print(); } catch (e) {}
+      }, 350);
+    });
+  <\/script>
+</body>
+</html>`;
+
+    win.document.open();
+    win.document.write(docHtml);
+    win.document.close();
+  }
+
+  function exportEventRsvpsPdf(event) {
+    const registrations = event.registrations || [];
+    const rows = registrations.map((r, i) => [
+      String(i + 1),
+      r.name || '—',
+      r.enterprise || '—',
+      formatPhone(r.owner_phone),
+      formatReportDate(r.created_at)
+    ]);
+    printPdfReport({
+      title: event.title,
+      kicker: 'LISTA DE PRESENÇAS · EVENTO',
+      subtitle: 'Relatório oficial de confirmações de presença registradas para este evento.',
+      meta: [
+        { label: 'Total Confirmado', value: `${registrations.length} ${registrations.length === 1 ? 'participante' : 'participantes'}` },
+        { label: 'Evento', value: event.title },
+        { label: 'Situação', value: event.published ? 'Publicado no site' : 'Rascunho' }
+      ],
+      sections: [
+        {
+          columns: ['#', 'Nome do Participante', 'Empreendimento / Empresa', 'Telefone', 'Data da Confirmação'],
+          rows
+        }
+      ],
+      footerNote: 'Controle de presenças para recepção e credenciamento do evento.'
+    });
+  }
+
+  function exportChapelSignupsPdf(signups, title) {
+    const list = signups || [];
+    const rows = list.map((s, i) => [
+      String(i + 1),
+      s.tribute_name || '—',
+      s.name || '—',
+      formatReportDate(s.created_at)
+    ]);
+    printPdfReport({
+      title: title || 'Capela de Nossa Senhora de Fátima',
+      kicker: 'CAMINHO DA FÉ · PROJETO',
+      subtitle: 'Lista oficial de benfeitores e homenagens registradas para a capela.',
+      meta: [
+        { label: 'Total de Homenagens', value: `${list.length} ${list.length === 1 ? 'nome registrado' : 'nomes registrados'}` },
+        { label: 'Contribuição Prevista', value: 'R$ 1.000,00 por benfeitor' },
+        { label: 'Conferência', value: 'Via comprovante Pix / WhatsApp' }
+      ],
+      sections: [
+        {
+          columns: ['#', 'Nome na Homenagem (Capela)', 'Benfeitor / Inscrito por', 'Data da Inscrição'],
+          rows
+        }
+      ],
+      footerNote: 'Lista destinada à conferência de comprovantes e confecção das homenagens.'
+    });
+  }
+
+  function exportAllRsvpsPdf() {
+    if (!latestConfirmations) {
+      notify('Carregue as confirmações antes de exportar o relatório.', true);
+      return;
+    }
+    const { events = [], chapel_signups = [] } = latestConfirmations;
+    const totalRsvps = events.reduce((sum, ev) => sum + (ev.registrations || []).length, 0);
+    const sections = [];
+
+    if (chapel_signups.length) {
+      sections.push({
+        heading: `Capela de Nossa Senhora de Fátima (${chapel_signups.length} ${chapel_signups.length === 1 ? 'inscrição' : 'inscrições'})`,
+        note: 'Homenagens registradas no projeto Caminho da Fé.',
+        columns: ['#', 'Nome na Homenagem', 'Benfeitor / Inscrito por', 'Data da Inscrição'],
+        rows: chapel_signups.map((s, i) => [String(i + 1), s.tribute_name || '—', s.name || '—', formatReportDate(s.created_at)])
+      });
+    }
+
+    events.forEach(ev => {
+      const regs = ev.registrations || [];
+      sections.push({
+        heading: `${ev.title} (${regs.length} ${regs.length === 1 ? 'presença' : 'presenças'})`,
+        note: ev.city ? `Cidade: ${ev.city}` : '',
+        columns: ['#', 'Nome do Participante', 'Empreendimento', 'Telefone', 'Data'],
+        rows: regs.map((r, i) => [String(i + 1), r.name || '—', r.enterprise || '—', formatPhone(r.owner_phone), formatReportDate(r.created_at)])
+      });
+    });
+
+    if (!sections.length) {
+      sections.push({
+        heading: 'Sem confirmações',
+        columns: ['#', 'Participante', 'Empreendimento', 'Telefone', 'Data'],
+        rows: []
+      });
+    }
+
+    printPdfReport({
+      title: 'Relatório Geral de Confirmações e Inscrições',
+      kicker: 'RELATÓRIO CONSOLIDADO',
+      subtitle: 'Visão consolidada de todas as presenças em eventos e inscrições em projetos.',
+      meta: [
+        { label: 'Eventos Listados', value: `${events.length} ${events.length === 1 ? 'evento' : 'eventos'}` },
+        { label: 'Presenças em Eventos', value: `${totalRsvps} ${totalRsvps === 1 ? 'confirmada' : 'confirmadas'}` },
+        { label: 'Inscrições em Projetos', value: `${chapel_signups.length} ${chapel_signups.length === 1 ? 'registrada' : 'registradas'}` }
+      ],
+      sections,
+      footerNote: 'Relatório consolidado gerado pelo Painel Administrativo de Tiago Ismar.'
+    });
+  }
+
+  function exportProjectModalSignupsPdf() {
+    if (!currentProjectSignups) {
+      notify('Nenhuma lista de projeto carregada para exportação.', true);
+      return;
+    }
+    const { signups = [], limit, projectTitle } = currentProjectSignups;
+    const limitInfo = limit === null ? 'Sem limite' : (limit ? `Limite de ${limit} nomes` : 'Sem limite');
+    printPdfReport({
+      title: projectTitle || 'Inscrições no Projeto',
+      kicker: 'RELATÓRIO DE INSCRIÇÕES',
+      subtitle: 'Lista nominal de inscritos registrados neste projeto.',
+      meta: [
+        { label: 'Total de Inscritos', value: `${signups.length} ${signups.length === 1 ? 'inscrito' : 'inscritos'}` },
+        { label: 'Capacidade', value: limitInfo },
+        { label: 'Situação', value: limit && signups.length >= limit ? 'Vagas esgotadas' : 'Inscrições abertas' }
+      ],
+      sections: [
+        {
+          columns: ['#', 'Nome na Homenagem (Capela)', 'Nome de Quem Inscreveu', 'Data da Inscrição'],
+          rows: signups.map((s, i) => [String(i + 1), s.tribute_name || '—', s.name || '—', formatReportDate(s.created_at)])
+        }
+      ],
+      footerNote: 'Relatório oficial gerado para controle interno e execução das homenagens.'
+    });
+  }
+
+  function exportOverviewPdf() {
+    const totalPublished = Object.keys(kinds).reduce((sum, kind) => sum + (data[kind] || []).filter(item => item.published).length, 0);
+    const companies = data.companies || [];
+    const events = data.events || [];
+    const projects = data.projects || [];
+
+    const sections = [
+      {
+        heading: `Empresas Cadastradas (${companies.length})`,
+        columns: ['#', 'Nome da Empresa', 'Cidade', 'Situação'],
+        rows: companies.map((c, i) => [String(i + 1), c.title || '—', c.city || '—', c.published ? 'Publicada' : 'Rascunho'])
+      },
+      {
+        heading: `Eventos da Agenda (${events.length})`,
+        columns: ['#', 'Título do Evento', 'Cidade', 'Situação'],
+        rows: events.map((e, i) => [String(i + 1), e.title || '—', e.city || '—', e.published ? 'Publicado' : 'Rascunho'])
+      },
+      {
+        heading: `Projetos (${projects.length})`,
+        columns: ['#', 'Título do Projeto', 'Formulário', 'Situação'],
+        rows: projects.map((p, i) => [String(i + 1), p.title || '—', p.participation_form || 'Nenhum', p.published ? 'Publicado' : 'Rascunho'])
+      }
+    ];
+
+    printPdfReport({
+      title: 'Relatório Executivo do Painel',
+      kicker: 'RESUMO GERAL DO CONTEÚDO',
+      subtitle: 'Panorama dos conteúdos publicados e estrutura administrativa do site.',
+      meta: [
+        { label: 'Acessos Hoje', value: Number(stats.today || 0).toLocaleString('pt-BR') },
+        { label: 'Acessos Registrados', value: Number(stats.total || 0).toLocaleString('pt-BR') },
+        { label: 'Conteúdos Publicados', value: `${totalPublished} itens` }
+      ],
+      sections,
+      footerNote: 'Documento gerado pelo Painel Administrativo de Tiago Ismar (tiagoismar.com).'
+    });
+  }
   function renderOwnerPhone(phone) {
     const parts = typeof phone === 'string' && phone.match(/^(\+55)?([1-9]\d)(\d{4,5})(\d{4})$/);
     if (!parts) return node('span', 'Telefone do proprietário não informado');
@@ -228,10 +750,13 @@
     info.append(title, node('p', confirmationCount(registrations.length), 'muted'));
     head.append(info);
     const headActions = node('div', null, 'rsvp-group-actions');
+    const pdfBtn = node('button', 'Exportar PDF', 'secondary');
+    pdfBtn.type = 'button';
+    pdfBtn.addEventListener('click', () => exportEventRsvpsPdf(event));
     const addBtn = node('button', 'Adicionar presença', 'secondary');
     addBtn.type = 'button';
     addBtn.addEventListener('click', () => openRsvpEditor(null, event.id));
-    headActions.append(addBtn);
+    headActions.append(pdfBtn, addBtn);
     if (event.registration_slug && (data.events || []).some(item => item.id === event.id && item.published)) {
       const link = node('a', 'Abrir formulário', 'subtle');
       link.href = `/#inscricao=${encodeURIComponent(event.registration_slug)}`;
@@ -286,6 +811,7 @@
     try {
       const { events, chapel_signups = [] } = await api('/api/admin/rsvps', { signal: request.signal });
       if (request.signal.aborted) return;
+      latestConfirmations = { events, chapel_signups };
       status.textContent = '';
       const chapel = (data.projects || []).find(project => project.participation_form === 'capela-de-fatima');
       if (chapel || chapel_signups.length) {
@@ -297,13 +823,18 @@
           node('p', `${chapel_signups.length} ${chapel_signups.length === 1 ? 'inscrição' : 'inscrições'} · Philippe confere os comprovantes pelo WhatsApp.`, 'muted')
         );
         head.append(info);
+        const headActions = node('div', null, 'rsvp-group-actions');
+        const pdfBtn = node('button', 'Exportar PDF', 'secondary');
+        pdfBtn.type = 'button';
+        pdfBtn.addEventListener('click', () => exportChapelSignupsPdf(chapel_signups, chapel?.title));
+        headActions.append(pdfBtn);
         if (chapel) {
           const addBtn = node('button', 'Nova inscrição', 'secondary');
           addBtn.type = 'button';
           addBtn.addEventListener('click', () => openSignupEditor(null, chapel.id));
-          head.append(addBtn);
+          headActions.append(addBtn);
         }
-        group.append(head);
+        head.append(headActions);
         const signups = node('ul', null, 'rsvp-attendees');
         signups.append(...chapel_signups.map(signup => signupRow(signup, chapel?.id)));
         group.append(signups);
@@ -343,7 +874,15 @@
     history.append(node('p', 'Contagem agregada, uma vez por aba. Não representa visitantes únicos. Sem histórico anterior à ativação.', 'stats-note'));
     summary.append(node('h2', 'Seu conteúdo')); const list = node('div', null, 'content-summary');
     Object.entries(kinds).forEach(([kind, config]) => { const button = node('button'); button.type = 'button'; const items = data[kind] || []; button.append(node('span', config.title), node('strong', String(items.length))); button.addEventListener('click', () => renderView(kind)); list.append(button); }); summary.append(list);
-    const backup = node('a', 'Baixar cópia do conteúdo', 'secondary'); backup.href = '/api/admin/export'; summary.append(backup);
+    const summaryActions = node('div', null, 'toolbar-actions');
+    summaryActions.style.marginTop = '18px';
+    const pdfReport = node('button', 'Relatório Geral (PDF)', 'secondary');
+    pdfReport.type = 'button';
+    pdfReport.addEventListener('click', exportOverviewPdf);
+    const backup = node('a', 'Baixar cópia do conteúdo', 'secondary');
+    backup.href = '/api/admin/export';
+    summaryActions.append(pdfReport, backup);
+    summary.append(summaryActions);
     grid.append(history, summary); panel.append(grid);
     if (stats.by_section?.length) { const sections = node('section', null, 'panel'); sections.append(node('h2', 'O que desperta interesse')); const labelsBySection = { inicio: 'Início', empresas: 'Empresas', eventos: 'Eventos', projetos: 'Projetos', parceiros: 'Parceiros', olhares: 'Outros olhares', tiago: 'O Tiago', serra: 'A serra', contato: 'Contato' }; stats.by_section.forEach(item => { const row = node('div', null, 'section-stat'); row.append(node('span', labelsBySection[item.section] || item.section), node('strong', Number(item.views).toLocaleString('pt-BR'))); sections.append(row); }); panel.append(sections); }
   }
@@ -495,6 +1034,8 @@
   $('#logout').addEventListener('click', async () => { try { await api('/api/admin/logout', { method: 'POST', body: {} }); showLogin(); } catch (error) { notify(error.message, true); } });
   $('#admin-nav').addEventListener('click', (event) => { const button = event.target.closest('[data-view]'); if (button) renderView(button.dataset.view); });
   $('#refresh-rsvps').addEventListener('click', loadConfirmations);
+  $('#export-all-rsvps-pdf')?.addEventListener('click', exportAllRsvpsPdf);
+  $('#export-signups-pdf')?.addEventListener('click', exportProjectModalSignupsPdf);
   $('#add-item').addEventListener('click', () => openEditor());
   ['record-search', 'record-state', 'record-city'].forEach(id => $(`#${id}`).addEventListener(id === 'record-search' ? 'input' : 'change', renderRecords));
   $('#editor-form').addEventListener('input', () => { editorDirty = true; });

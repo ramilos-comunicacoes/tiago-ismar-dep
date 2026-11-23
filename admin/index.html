@@ -40,7 +40,7 @@
       <section id="overview-panel" aria-label="Resumo do site"></section>
       <section id="records-panel" hidden aria-label="Cadastros"><div class="filters"><label>Buscar<input id="record-search" type="search" placeholder="Nome ou cidade"></label><label>Situação<select id="record-state"><option value="all">Todos</option><option value="published">Publicados</option><option value="draft">Rascunhos</option></select></label><label id="city-filter-label">Cidade<select id="record-city"><option value="">Todas as cidades</option></select></label></div><p id="record-count" class="muted" role="status"></p><div id="record-list" class="record-list"></div></section>
       <section id="rsvps-panel" hidden aria-label="Confirmações por evento">
-        <div class="rsvp-toolbar"><p id="rsvps-status" class="muted" role="status"></p><button id="refresh-rsvps" class="secondary" type="button">Atualizar lista</button></div>
+        <div class="rsvp-toolbar"><p id="rsvps-status" class="muted" role="status"></p><div class="toolbar-actions"><button id="export-all-rsvps-pdf" class="secondary" type="button">Exportar PDF geral</button><button id="refresh-rsvps" class="secondary" type="button">Atualizar lista</button></div></div>
         <div id="rsvps-list" class="rsvp-groups"></div>
       </section>
       <section id="settings-panel" hidden>
@@ -64,7 +64,7 @@
   <datalist id="city-options"><option value="Tianguá"><option value="Ubajara"><option value="Viçosa do Ceará"><option value="Guaraciaba do Norte"><option value="São Benedito"><option value="Ibiapina"><option value="Croatá"><option value="Ipu"><option value="Ipueiras"><option value="Mucambo"><option value="Frecheirinha"><option value="Graça"><option value="Pacujá"><option value="Reriutaba"><option value="Pires Ferreira"><option value="Carnaubal"></datalist>
   <dialog id="project-signups" aria-labelledby="signups-title">
     <header class="dialog-heading"><div><p class="eyebrow">INSCRITOS NO PROJETO</p><h2 id="signups-title"></h2></div><button id="close-signups" class="round" type="button" aria-label="Fechar lista de inscritos"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header>
-    <div class="signups-body"><div class="rsvp-toolbar"><p id="project-signup-status" role="status"></p><div class="toolbar-actions"><button id="add-project-signup" type="button" class="primary">Novo inscrito</button><button id="refresh-signups" type="button" class="secondary">Atualizar lista</button></div></div><ul id="project-signup-list" class="rsvp-attendees"></ul></div>
+    <div class="signups-body"><div class="rsvp-toolbar"><p id="project-signup-status" role="status"></p><div class="toolbar-actions"><button id="export-signups-pdf" type="button" class="secondary">Exportar PDF</button><button id="add-project-signup" type="button" class="primary">Novo inscrito</button><button id="refresh-signups" type="button" class="secondary">Atualizar lista</button></div></div><ul id="project-signup-list" class="rsvp-attendees"></ul></div>
   </dialog>
   <dialog id="rsvp-dialog" aria-labelledby="rsvp-dialog-title">
     <form id="rsvp-dialog-form">

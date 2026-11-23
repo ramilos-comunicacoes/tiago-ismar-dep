@@ -82,3 +82,32 @@
   min-height: 48px;
   text-underline-offset: 3px;
 }
+.record-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+.record-actions button {
+  min-height: 42px;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+@media (max-width: 599px) {
+  .record {
+    flex-wrap: wrap;
+  }
+  .record-actions {
+    width: 100%;
+    justify-content: stretch;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+  .record-actions button {
+    flex: 1 1 auto;
+    min-height: 46px;
+  }
+}

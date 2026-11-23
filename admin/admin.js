@@ -729,6 +729,192 @@
       footerNote: 'Documento gerado pelo Painel Administrativo de Tiago Ismar (tiagoismar.com).'
     });
   }
+
+  async function exportIndividualEventPdf(item) {
+    let registrations = [];
+    try {
+      const res = await api('/api/admin/rsvps');
+      const found = (res.events || []).find(ev => ev.id === item.id || (item.registration_slug && ev.slug === item.registration_slug));
+      if (found && found.registrations) registrations = found.registrations;
+    } catch {
+      if (latestConfirmations && latestConfirmations.events) {
+        const found = latestConfirmations.events.find(ev => ev.id === item.id || (item.registration_slug && ev.slug === item.registration_slug));
+        if (found && found.registrations) registrations = found.registrations;
+      }
+    }
+    const rows = registrations.map((r, i) => [
+      String(i + 1),
+      r.name || '—',
+      r.enterprise || '—',
+      formatPhone(r.owner_phone),
+      formatReportDate(r.created_at)
+    ]);
+    const eventDate = item.start_at ? item.start_at.slice(0, 10).split('-').reverse().join('/') + (item.start_at.length > 10 ? ' às ' + item.start_at.slice(11, 16) : '') : 'A definir';
+    printPdfReport({
+      title: item.title,
+      kicker: 'DOSSIÊ DO EVENTO · RELATÓRIO INDIVIDUAL',
+      subtitle: item.description || 'Relatório oficial do evento com detalhamento e lista de confirmações de presença.',
+      meta: [
+        { label: 'Cidade', value: item.city || 'Ibiapaba' },
+        { label: 'Data / Horário', value: eventDate },
+        { label: 'Local', value: item.location || 'A definir' },
+        { label: 'Situação', value: item.published ? 'Publicado no site' : 'Rascunho' },
+        { label: 'Confirmações de Presença', value: `${registrations.length} ${registrations.length === 1 ? 'participante' : 'participantes'}` }
+      ],
+      sections: [
+        {
+          heading: 'Participantes Confirmados',
+          note: registrations.length ? 'Lista nominal de participantes que confirmaram presença através do formulário oficial.' : 'Nenhuma confirmação de presença registrada até o momento.',
+          columns: ['#', 'Nome do Participante', 'Empreendimento / Empresa', 'Telefone', 'Data da Confirmação'],
+          rows
+        }
+      ],
+      footerNote: 'Dossiê individual do evento gerado pelo Painel Administrativo de Tiago Ismar.'
+    });
+  }
+
+  async function exportIndividualProjectPdf(item) {
+    let signups = [];
+    let limit = null;
+    if (item.participation_form || item.signup_count > 0) {
+      try {
+        const res = await api(`/api/admin/projects/${encodeURIComponent(item.id)}/signups`);
+        signups = res.signups || [];
+        limit = res.limit;
+      } catch {
+        // ignora se endpoint falhar
+      }
+    }
+    const limitInfo = limit === null ? 'Sem limite' : (limit ? `Limite de ${limit} nomes` : 'Sem limite');
+    const rows = signups.map((s, i) => [
+      String(i + 1),
+      s.tribute_name || '—',
+      s.name || '—',
+      formatReportDate(s.created_at)
+    ]);
+    const sections = [];
+    if (item.description) {
+      sections.push({
+        heading: 'Apresentação do Projeto',
+        note: item.description,
+        columns: ['Característica', 'Informação'],
+        rows: [
+          ['Etapa / Status', projectLabels[item.status] || item.status || 'Em andamento'],
+          ['Cidade de Atuação', item.city || 'Ibiapaba'],
+          ['Formulário Ativo', item.participation_form ? 'Sim (Benfeitores / Inscrições)' : 'Não'],
+          ['Situação no Site', item.published ? 'Publicado' : 'Rascunho']
+        ]
+      });
+    }
+    sections.push({
+      heading: item.participation_form ? 'Lista de Inscritos e Benfeitores' : 'Inscrições',
+      note: signups.length ? 'Relação nominal de pessoas inscritas ou homenagens registradas no projeto.' : 'Nenhuma inscrição registrada para este projeto até o momento.',
+      columns: ['#', 'Nome na Homenagem / Registro', 'Inscrito por / Benfeitor', 'Data da Inscrição'],
+      rows
+    });
+    printPdfReport({
+      title: item.title,
+      kicker: 'PROJETO · RELATÓRIO INDIVIDUAL',
+      subtitle: `Dossiê executivo e relação nominal de inscritos do projeto ${item.title}.`,
+      meta: [
+        { label: 'Cidade', value: item.city || 'Ibiapaba' },
+        { label: 'Etapa', value: projectLabels[item.status] || item.status || '—' },
+        { label: 'Total de Inscritos', value: `${signups.length} ${signups.length === 1 ? 'inscrito' : 'inscritos'}` },
+        { label: 'Capacidade', value: limitInfo },
+        { label: 'Situação', value: item.published ? 'Publicado' : 'Rascunho' }
+      ],
+      sections,
+      footerNote: 'Relatório individual de projeto gerado pelo Painel Administrativo de Tiago Ismar.'
+    });
+  }
+
+  function exportIndividualCompanyPdf(item) {
+    const catalog = (data.catalog_items || []).filter(ci => ci.company_id === item.id);
+    const rows = catalog.map((c, i) => [
+      String(i + 1),
+      c.title || '—',
+      c.price_text || 'Sob consulta',
+      c.description || '—',
+      c.published ? 'Publicado' : 'Rascunho'
+    ]);
+    const sections = [];
+    if (item.description) {
+      sections.push({
+        heading: 'Perfil da Empresa',
+        note: item.description,
+        columns: ['Campo', 'Detalhe'],
+        rows: [
+          ['Categoria', item.category || 'Não informada'],
+          ['Cidade', item.city || 'Ibiapaba'],
+          ['WhatsApp', formatPhone(item.whatsapp)],
+          ['Grupo Ramilos', item.is_group ? 'Sim' : 'Não'],
+          ['Situação', item.published ? 'Publicada no site' : 'Rascunho']
+        ]
+      });
+    }
+    sections.push({
+      heading: `Catálogo de Produtos e Serviços (${catalog.length})`,
+      note: catalog.length ? 'Itens disponíveis no catálogo da empresa.' : 'Nenhum item cadastrado no catálogo desta empresa.',
+      columns: ['#', 'Item / Produto / Serviço', 'Preço / Condição', 'Descrição', 'Situação'],
+      rows
+    });
+    printPdfReport({
+      title: item.title,
+      kicker: 'EMPRESA DA IBIAPABA · DOSSIÊ INDIVIDUAL',
+      subtitle: item.description || `Ficha completa da empresa com produtos, serviços e contatos.`,
+      meta: [
+        { label: 'Cidade', value: item.city || 'Ibiapaba' },
+        { label: 'Categoria', value: item.category || 'Geral' },
+        { label: 'WhatsApp', value: formatPhone(item.whatsapp) },
+        { label: 'Itens no Catálogo', value: `${catalog.length} ${catalog.length === 1 ? 'item' : 'itens'}` },
+        { label: 'Situação', value: item.published ? 'Publicada' : 'Rascunho' }
+      ],
+      sections,
+      footerNote: 'Dossiê individual de empresa gerado pelo Painel Administrativo de Tiago Ismar.'
+    });
+  }
+
+  function exportGenericItemPdf(item, kind) {
+    const kindInfo = kinds[kind] || { title: 'Cadastro', single: 'item' };
+    const company = kind === 'catalog_items' ? (data.companies || []).find(c => c.id === item.company_id)?.title : '';
+    const rows = [
+      ['Título / Nome', item.title || '—'],
+      ['Cidade', item.city || '—'],
+      ['Situação', item.published ? 'Publicado' : 'Rascunho'],
+      item.category ? ['Categoria', item.category] : null,
+      company ? ['Empresa Associada', company] : null,
+      item.price_text ? ['Preço / Condição', item.price_text] : null,
+      item.whatsapp ? ['WhatsApp', formatPhone(item.whatsapp)] : null,
+      item.url ? ['Link / URL', item.url] : null,
+      item.description ? ['Descrição', item.description] : null
+    ].filter(Boolean);
+    printPdfReport({
+      title: item.title,
+      kicker: `${(kindInfo.single || 'item').toUpperCase()} · RELATÓRIO INDIVIDUAL`,
+      subtitle: 'Detalhamento individual do cadastro registrado no painel.',
+      meta: [
+        { label: 'Tipo', value: kindInfo.title || 'Cadastro' },
+        { label: 'Cidade', value: item.city || 'Ibiapaba' },
+        { label: 'Situação', value: item.published ? 'Publicado' : 'Rascunho' }
+      ],
+      sections: [
+        {
+          heading: 'Informações do Cadastro',
+          columns: ['Campo', 'Conteúdo'],
+          rows
+        }
+      ],
+      footerNote: 'Relatório individual emitido pelo Painel Administrativo de Tiago Ismar.'
+    });
+  }
+
+  async function exportIndividualRecordPdf(item, kind) {
+    if (!item) return;
+    if (kind === 'events') return await exportIndividualEventPdf(item);
+    if (kind === 'projects') return await exportIndividualProjectPdf(item);
+    if (kind === 'companies') return exportIndividualCompanyPdf(item);
+    return exportGenericItemPdf(item, kind);
+  }
   function renderOwnerPhone(phone) {
     const parts = typeof phone === 'string' && phone.match(/^(\+55)?([1-9]\d)(\d{4,5})(\d{4})$/);
     if (!parts) return node('span', 'Telefone do proprietário não informado');
@@ -899,7 +1085,16 @@
       const company = currentView === 'catalog_items' ? (data.companies || []).find(company => company.id === item.company_id)?.title : '';
       const detail = [item.city, company, currentView === 'projects' ? projectLabels[item.status] : '', currentView === 'events' && item.start_at ? item.start_at.slice(0,10).split('-').reverse().join('/') : ''].filter(Boolean).join(' · ');
       if (detail) copy.append(node('p', detail)); copy.append(node('span', item.published ? 'Publicado' : 'Rascunho', `badge${item.published ? ' live' : ''}`));
-      const edit = node('button', 'Editar', 'secondary'); edit.type = 'button'; edit.setAttribute('aria-label', `Editar ${item.title}`); edit.addEventListener('click', () => openEditor(item)); card.append(copy, edit); list.append(card);
+      const actions = node('div', null, 'record-actions');
+      const edit = node('button', 'Editar', 'secondary'); edit.type = 'button'; edit.setAttribute('aria-label', `Editar ${item.title}`); edit.addEventListener('click', () => openEditor(item));
+      actions.append(edit);
+      if (currentView === 'events' || currentView === 'projects' || currentView === 'companies') {
+        const exportBtn = node('button', 'Exportar PDF', 'secondary');
+        exportBtn.type = 'button';
+        exportBtn.setAttribute('aria-label', `Exportar PDF de ${item.title}`);
+        exportBtn.addEventListener('click', () => exportIndividualRecordPdf(item, currentView));
+        actions.append(exportBtn);
+      }
       if (currentView === 'projects' && (item.participation_form || item.signup_count > 0)) {
         card.classList.add('has-signups');
         const signups = node('button', 'Ver inscritos', 'secondary signup-trigger');
@@ -907,8 +1102,10 @@
         signups.setAttribute('aria-haspopup', 'dialog');
         signups.setAttribute('aria-label', `Ver inscritos de ${item.title}`);
         signups.addEventListener('click', () => openProjectSignups(item));
-        card.append(signups);
+        actions.append(signups);
       }
+      card.append(copy, actions);
+      list.append(card);
     });
   }
   function field(name, label, value = '', options = {}) {
@@ -975,6 +1172,8 @@
     const values = item || {}, fields = $('#editor-fields'); fields.replaceChildren(); $('#editor-error').textContent = '';
     $('#editor-title').textContent = `${item ? 'Editar' : 'Adicionar'} ${kinds[currentView].single}`;
     $('#delete-item').hidden = !item;
+    const exportEditorBtn = $('#export-editor-item');
+    if (exportEditorBtn) exportEditorBtn.hidden = !item;
     fields.append(field('title', currentView === 'partners' || currentView === 'companies' ? 'Nome do empreendimento' : 'Título', values.title, { required: true, wide: true, max: 160 }));
     if (currentView === 'catalog_items') fields.append(field('company_id', 'Empresa', values.company_id || (data.companies || [])[0]?.id, { required: true, choices: (data.companies || []).map(company => [company.id, company.title]), wide: true }));
     else fields.append(field('city', 'Cidade', values.city || 'Tianguá', { required: true, max: 100, wide: currentView === 'partners' }));
@@ -1036,6 +1235,9 @@
   $('#refresh-rsvps').addEventListener('click', loadConfirmations);
   $('#export-all-rsvps-pdf')?.addEventListener('click', exportAllRsvpsPdf);
   $('#export-signups-pdf')?.addEventListener('click', exportProjectModalSignupsPdf);
+  $('#export-editor-item')?.addEventListener('click', () => {
+    if (editing) exportIndividualRecordPdf(editing, currentView);
+  });
   $('#add-item').addEventListener('click', () => openEditor());
   ['record-search', 'record-state', 'record-city'].forEach(id => $(`#${id}`).addEventListener(id === 'record-search' ? 'input' : 'change', renderRecords));
   $('#editor-form').addEventListener('input', () => { editorDirty = true; });

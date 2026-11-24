@@ -8,8 +8,9 @@
   <title>Tiago Ismar · Meu espaço</title>
   <link rel="icon" href="/assets/personal-favicon.svg?v=8">
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/admin/admin.css?v=5">
-  <script src="/admin/admin.js?v=7" defer></script>
+  <link rel="stylesheet" href="/admin/admin.css?v=6">
+  <script src="/admin/admin.js?v=8" defer></script>
+  <script src="/admin/surveys.js?v=1" defer></script>
 </head>
 <body>
   <a class="skip" href="#workspace">Ir para o conteúdo</a>
@@ -33,7 +34,7 @@
   </main>
   <div id="admin-view" class="admin-layout" hidden>
     <header class="app-header"><a href="/admin/" aria-label="Painel Tiago Ismar"><img class="brand" src="/assets/brand/tiago-ismar-logo-light.svg?v=8" alt="Tiago Ismar" width="588" height="124"></a><div><a href="/" target="_blank" rel="noopener" class="header-link">Ver site <svg aria-hidden="true"><use href="/assets/icons/lucide.svg#arrow-up-right"></use></svg></a><button id="logout" class="header-link" type="button">Sair</button></div></header>
-    <aside class="sidebar"><p class="eyebrow">MEU ESPAÇO</p><nav aria-label="Administração" id="admin-nav"><button type="button" data-view="overview" aria-current="page">Visão geral</button><button type="button" data-view="companies">Empresas</button><button type="button" data-view="catalog_items">Catálogos</button><button type="button" data-view="events">Eventos</button><button type="button" data-view="rsvps">Confirmações</button><button type="button" data-view="projects">Projetos</button><button type="button" data-view="partners">Parceiros por cidade</button><button type="button" data-view="settings">Configurações</button></nav><p class="sidebar-note">A serra em movimento.<br>O conteúdo nas suas mãos.</p></aside>
+    <aside class="sidebar"><p class="eyebrow">MEU ESPAÇO</p><nav aria-label="Administração" id="admin-nav"><button type="button" data-view="overview" aria-current="page">Visão geral</button><button type="button" data-view="companies">Empresas</button><button type="button" data-view="catalog_items">Catálogos</button><button type="button" data-view="events">Eventos</button><button type="button" data-view="rsvps">Confirmações</button><button type="button" data-view="surveys">Pesquisas</button><button type="button" data-view="projects">Projetos</button><button type="button" data-view="partners">Parceiros por cidade</button><button type="button" data-view="settings">Configurações</button></nav><p class="sidebar-note">A serra em movimento.<br>O conteúdo nas suas mãos.</p></aside>
     <main id="workspace" tabindex="-1">
       <div class="workspace-heading"><div><p id="view-kicker" class="eyebrow">TIAGO ISMAR</p><h1 id="view-title">Visão geral</h1><p id="view-description">Um olhar sobre o seu site.</p></div><button id="add-item" class="primary" type="button" hidden>Novo cadastro <svg aria-hidden="true"><use href="/assets/icons/lucide.svg#arrow-up-right"></use></svg></button></div>
       <p id="app-status" role="status" aria-live="polite"></p>
@@ -42,6 +43,10 @@
       <section id="rsvps-panel" hidden aria-label="Confirmações por evento">
         <div class="rsvp-toolbar"><p id="rsvps-status" class="muted" role="status"></p><div class="toolbar-actions"><button id="export-all-rsvps-pdf" class="secondary" type="button">Exportar PDF geral</button><button id="refresh-rsvps" class="secondary" type="button">Atualizar lista</button></div></div>
         <div id="rsvps-list" class="rsvp-groups"></div>
+      </section>
+      <section id="surveys-panel" hidden aria-label="Pesquisas anônimas">
+        <div class="rsvp-toolbar"><p id="surveys-status" class="muted" role="status"></p><div class="toolbar-actions"><button id="new-survey" class="primary" type="button">Nova pesquisa</button><button id="refresh-surveys" class="secondary" type="button">Atualizar</button></div></div>
+        <div id="surveys-list" class="survey-cards"></div>
       </section>
       <section id="settings-panel" hidden>
       <form id="chapel-limit-form" class="settings-card">
@@ -87,6 +92,27 @@
       </div>
       <p id="signup-dialog-error" class="error" role="alert"></p>
       <footer class="editor-actions"><button type="button" id="cancel-signup-dialog" class="secondary">Cancelar</button><button type="submit" id="save-signup-dialog" class="primary">Salvar inscrição</button></footer>
+    </form>
+  </dialog>
+  <dialog id="survey-qr" aria-labelledby="survey-qr-title">
+    <header class="dialog-heading"><div><p class="eyebrow">QR CODE DA PESQUISA</p><h2 id="survey-qr-title"></h2></div><button id="close-survey-qr" class="round" type="button" aria-label="Fechar QR code"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header>
+    <div class="qr-body"><img id="survey-qr-image" alt="QR code da pesquisa" width="320" height="320"><p class="qr-link"><a id="survey-qr-link" target="_blank" rel="noopener"></a></p><div class="toolbar-actions"><a id="survey-qr-png" class="primary" download>Baixar PNG</a><a id="survey-qr-svg" class="secondary" download>Baixar SVG</a><button id="survey-qr-copy" class="secondary" type="button">Copiar link</button></div><p id="survey-qr-status" class="muted" role="status"></p></div>
+  </dialog>
+  <dialog id="survey-editor" aria-labelledby="survey-editor-title">
+    <form id="survey-editor-form" novalidate>
+      <header class="dialog-heading"><div><p class="eyebrow">PESQUISA ANÔNIMA</p><h2 id="survey-editor-title">Nova pesquisa</h2></div><button id="close-survey-editor" type="button" class="round" aria-label="Fechar editor"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#x"></use></svg></button></header>
+      <div class="editor-fields single-column">
+        <label for="survey-title">Título<input id="survey-title" required maxlength="160"></label>
+        <label for="survey-slug">Link (depois de /pesquisa/?s=)<input id="survey-slug" required maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" autocapitalize="none" spellcheck="false" placeholder="reuniao-trade-tiangua"></label>
+        <label for="survey-intro">Apresentação<textarea id="survey-intro" rows="3" maxlength="1500"></textarea></label>
+        <label for="survey-thanks">Mensagem depois de enviar<input id="survey-thanks" maxlength="600"></label>
+        <div class="field wide switch-field"><input id="survey-open" type="checkbox"><label for="survey-open">Aberta para receber respostas<p>Fechada, o link mostra “Pesquisa encerrada”.</p></label></div>
+        <p id="survey-locked" class="field-note" hidden>Esta pesquisa já tem respostas, então as perguntas estão travadas para não misturar os gráficos. Para mudá-las, apague as respostas antes.</p>
+        <div id="survey-questions" class="survey-questions"></div>
+        <button id="add-survey-question" class="secondary" type="button">Adicionar pergunta</button>
+      </div>
+      <p id="survey-editor-error" class="error" role="alert"></p>
+      <footer class="editor-actions"><button type="button" id="cancel-survey-editor" class="secondary">Cancelar</button><button type="submit" id="save-survey" class="primary">Salvar pesquisa</button></footer>
     </form>
   </dialog>
 </body>

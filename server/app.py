@@ -126,6 +126,16 @@ def initialize_database(data_dir):
             date TEXT NOT NULL, section TEXT NOT NULL, views INTEGER NOT NULL,
             PRIMARY KEY(date, section)
         );
+        CREATE TABLE IF NOT EXISTS surveys (
+            id TEXT PRIMARY KEY, slug TEXT NOT NULL, data TEXT NOT NULL,
+            created_at TEXT NOT NULL, updated_at TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS surveys_slug ON surveys(slug) WHERE deleted=0;
+        CREATE TABLE IF NOT EXISTS survey_responses (
+            id TEXT PRIMARY KEY, survey_id TEXT NOT NULL REFERENCES surveys(id),
+            answers TEXT NOT NULL, answered_on TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS survey_responses_survey ON survey_responses(survey_id);
         CREATE TABLE IF NOT EXISTS audit (
             id INTEGER PRIMARY KEY, user_id INTEGER, action TEXT NOT NULL,
             target TEXT NOT NULL, happened_at TEXT NOT NULL
@@ -149,7 +159,144 @@ def initialize_database(data_dir):
                 db.execute("INSERT INTO records(id, kind, data, updated_at) VALUES (?, 'partners', ?, ?)",
                            (secrets.token_hex(12), json.dumps(entry, ensure_ascii=False), utc_now()))
             db.execute("INSERT INTO metadata VALUES ('seed_version','1')")
+        if not db.execute("SELECT 1 FROM metadata WHERE key='survey_seed_version'").fetchone():
+            surveys = json.loads((Path(__file__).parent / "surveys.json").read_text(encoding="utf-8"))
+            for entry in surveys["surveys"]:
+                slug = entry.pop("slug")
+                if not db.execute("SELECT 1 FROM surveys WHERE slug=? AND deleted=0", (slug,)).fetchone():
+                    db.execute("INSERT INTO surveys(id,slug,data,created_at,updated_at) VALUES (?,?,?,?,?)",
+                               (secrets.token_hex(12), slug, json.dumps(entry, ensure_ascii=False), utc_now(), utc_now()))
+            db.execute("INSERT INTO metadata VALUES ('survey_seed_version','1')")
     db.close()
+
+
+SURVEY_TYPES = {"single", "multiple", "scale", "text"}
+SURVEY_QUESTION_ID = re.compile(r"[a-z0-9_]{1,24}")
+SURVEY_TEXT_LIMIT = 1000
+
+
+def survey_definition(source, text_field):
+    """Validate a survey written in the panel. Returns the stored data (without slug)."""
+    if not isinstance(source, dict):
+        raise APIError("Envie a pesquisa em formato JSON.")
+    data = {
+        "title": text_field(source.get("title", ""), "título", 160, required=True),
+        "intro": text_field(source.get("intro", ""), "apresentação", 1500),
+        "thanks": text_field(source.get("thanks", ""), "mensagem de agradecimento", 600),
+        "open": source.get("open", False),
+    }
+    if not isinstance(data["open"], bool):
+        raise APIError("Informe se a pesquisa está aberta.")
+    questions = source.get("questions")
+    if not isinstance(questions, list) or not 1 <= len(questions) <= 40:
+        raise APIError("A pesquisa precisa ter de 1 a 40 perguntas.")
+    seen, result = set(), []
+    for number, question in enumerate(questions, 1):
+        if not isinstance(question, dict):
+            raise APIError(f"Confira a pergunta {number}.")
+        kind = question.get("type")
+        if kind not in SURVEY_TYPES:
+            raise APIError(f"Escolha o tipo da pergunta {number}.")
+        identifier = question.get("id") or f"p{secrets.token_hex(4)}"
+        if not isinstance(identifier, str) or not SURVEY_QUESTION_ID.fullmatch(identifier) or identifier in seen:
+            raise APIError(f"Identificador inválido na pergunta {number}.")
+        seen.add(identifier)
+        required = question.get("required", True)
+        if not isinstance(required, bool):
+            raise APIError(f"Confira se a pergunta {number} é obrigatória.")
+        item = {"id": identifier, "type": kind, "required": required,
+                "text": text_field(question.get("text", ""), f"texto da pergunta {number}", 300, required=True)}
+        if kind in {"single", "multiple"}:
+            options = question.get("options")
+            if not isinstance(options, list):
+                raise APIError(f"Informe as opções da pergunta {number}.")
+            options = [text_field(option, f"opção da pergunta {number}", 120) for option in options]
+            options = [option for option in options if option]
+            if not 2 <= len(options) <= 15 or len({option.casefold() for option in options}) != len(options):
+                raise APIError(f"A pergunta {number} precisa de 2 a 15 opções diferentes.")
+            item["options"] = options
+            if kind == "multiple":
+                maximum = question.get("max", len(options))
+                if type(maximum) is not int or not 1 <= maximum <= len(options):
+                    raise APIError(f"Confira quantas opções podem ser marcadas na pergunta {number}.")
+                item["max"] = maximum
+        if kind == "scale":
+            item["min_label"] = text_field(question.get("min_label", ""), f"rótulo da nota 1 da pergunta {number}", 40)
+            item["max_label"] = text_field(question.get("max_label", ""), f"rótulo da nota 5 da pergunta {number}", 40)
+        result.append(item)
+    data["questions"] = result
+    return data
+
+
+def survey_answers(survey, source):
+    """Validate one anonymous response against the survey's questions."""
+    if not isinstance(source, dict):
+        raise APIError("Envie as respostas em formato JSON.")
+    questions = {question["id"]: question for question in survey["questions"]}
+    if set(source) - set(questions):
+        raise APIError("A pesquisa mudou. Atualize a página e responda novamente.", 409)
+    answers = {}
+    for identifier, question in questions.items():
+        value = source.get(identifier)
+        if value in (None, "", []):
+            if question["required"]:
+                raise APIError(f"Responda: {question['text']}")
+            continue
+        kind = question["type"]
+        if kind == "single":
+            if value not in question["options"]:
+                raise APIError(f"Escolha uma opção em: {question['text']}")
+        elif kind == "multiple":
+            if (not isinstance(value, list) or len(set(map(str, value))) != len(value)
+                    or not 1 <= len(value) <= question["max"]
+                    or any(option not in question["options"] for option in value)):
+                raise APIError(f"Marque até {question['max']} opções em: {question['text']}")
+        elif kind == "scale":
+            if type(value) is not int or not 1 <= value <= 5:
+                raise APIError(f"Escolha uma nota de 1 a 5 em: {question['text']}")
+        else:
+            if not isinstance(value, str):
+                raise APIError("Confira sua resposta escrita.")
+            value = value.strip()
+            invalid = any((ord(char) < 32 and char not in "\n\r\t") or 0xD800 <= ord(char) <= 0xDFFF for char in value)
+            if len(value) > SURVEY_TEXT_LIMIT or invalid:
+                raise APIError(f"A resposta escrita pode ter até {SURVEY_TEXT_LIMIT} caracteres.")
+            if not value:
+                if question["required"]:
+                    raise APIError(f"Responda: {question['text']}")
+                continue
+        answers[identifier] = value
+    return answers
+
+
+def survey_results(survey, rows):
+    """Aggregate answers. Written answers are shuffled so they cannot be matched to other choices."""
+    total = len(rows)
+    parsed = [json.loads(row["answers"]) for row in rows]
+    results = []
+    for question in survey["questions"]:
+        values = [answer[question["id"]] for answer in parsed if question["id"] in answer]
+        item = {key: question[key] for key in ("id", "type", "text") if key in question}
+        item["answered"] = len(values)
+        if question["type"] in {"single", "multiple"}:
+            counts = {option: 0 for option in question["options"]}
+            for value in values:
+                for option in (value if question["type"] == "multiple" else [value]):
+                    if option in counts:
+                        counts[option] += 1
+            item["options"] = [{"label": label, "count": count} for label, count in counts.items()]
+            if question["type"] == "multiple":
+                item["max"] = question["max"]
+        elif question["type"] == "scale":
+            item["options"] = [{"label": str(score), "count": values.count(score)} for score in range(1, 6)]
+            item["average"] = round(sum(values) / len(values), 1) if values else None
+            item["min_label"], item["max_label"] = question.get("min_label", ""), question.get("max_label", "")
+        else:
+            texts = list(values)
+            secrets.SystemRandom().shuffle(texts)
+            item["answers"] = texts
+        results.append(item)
+    return {"total": total, "questions": results}
 
 
 def create_app(test_config=None):
@@ -956,6 +1103,157 @@ def create_app(test_config=None):
         response.headers["Content-Disposition"] = 'attachment; filename="tiago-conteudos.json"'
         return response
 
+    # Anonymous surveys: responses keep only the answers and the day, never IP, name or session.
+    def survey_row(survey_id=None, slug=None):
+        column, value = ("id", survey_id) if survey_id is not None else ("slug", slug)
+        row = connection().execute(f"SELECT * FROM surveys WHERE {column}=? AND deleted=0", (value,)).fetchone()
+        if row is None:
+            raise APIError("Pesquisa não encontrada.", 404)
+        return row
+
+    def survey_item(row, with_count=True):
+        item = {**json.loads(row["data"]), "id": row["id"], "slug": row["slug"], "updated_at": row["updated_at"]}
+        if with_count:
+            item["responses"] = connection().execute(
+                "SELECT COUNT(*) FROM survey_responses WHERE survey_id=?", (row["id"],)).fetchone()[0]
+        return item
+
+    def survey_slug(value):
+        slug = text_field(value, "link da pesquisa", REGISTRATION_SLUG_LIMIT, required=True).lower()
+        if not REGISTRATION_SLUG.fullmatch(slug):
+            raise APIError("Use apenas letras sem acento, números e hífens no link da pesquisa.")
+        return slug
+
+    def survey_link(slug):
+        origin = request.host_url.rstrip("/") if app.config["DEV_MODE"] or app.testing else app.config["PUBLIC_ORIGIN"].rstrip("/")
+        return f"{origin}/pesquisa/?s={slug}"
+
+    @app.get("/api/public/surveys/<slug>")
+    def public_survey(slug):
+        if len(slug) > REGISTRATION_SLUG_LIMIT or not REGISTRATION_SLUG.fullmatch(slug):
+            raise APIError("Pesquisa não encontrada.", 404)
+        item = survey_item(survey_row(slug=slug), with_count=False)
+        response = jsonify({key: item[key] for key in ("slug", "title", "intro", "thanks", "open", "questions")})
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+    @app.post("/api/public/surveys/<slug>/responses")
+    def answer_survey(slug):
+        require_origin()
+        if len(slug) > REGISTRATION_SLUG_LIMIT or not REGISTRATION_SLUG.fullmatch(slug):
+            raise APIError("Pesquisa não encontrada.", 404)
+        # A whole meeting room may share one Wi-Fi address, so the limit is generous.
+        rate_limit("survey-response", 300, 600)
+        data = payload()
+        row = survey_row(slug=slug)
+        survey = json.loads(row["data"])
+        if not survey.get("open"):
+            raise APIError("Esta pesquisa já foi encerrada. Obrigado pelo interesse!", 409)
+        answers = survey_answers(survey, data.get("answers"))
+        if not answers:
+            raise APIError("Responda pelo menos uma pergunta.")
+        local_day = datetime.now(ZoneInfo("America/Fortaleza")).date().isoformat()
+        db = connection()
+        with db:
+            db.execute("INSERT INTO survey_responses(id,survey_id,answers,answered_on) VALUES (?,?,?,?)",
+                       (secrets.token_hex(16), row["id"], json.dumps(answers, ensure_ascii=False), local_day))
+        return jsonify(ok=True, thanks=survey.get("thanks", ""))
+
+    @app.get("/api/admin/surveys")
+    @authenticated
+    def admin_surveys():
+        rows = connection().execute("SELECT * FROM surveys WHERE deleted=0 ORDER BY created_at DESC").fetchall()
+        return jsonify(surveys=[{**survey_item(row), "link": survey_link(row["slug"])} for row in rows])
+
+    @app.post("/api/admin/surveys")
+    @authenticated
+    def create_survey():
+        source = payload()
+        slug = survey_slug(source.get("slug", ""))
+        data = survey_definition(source, text_field)
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            if db.execute("SELECT 1 FROM surveys WHERE slug=? AND deleted=0", (slug,)).fetchone():
+                raise APIError("Este link já pertence a outra pesquisa.", 409)
+            survey_id = secrets.token_hex(12)
+            db.execute("INSERT INTO surveys(id,slug,data,created_at,updated_at) VALUES (?,?,?,?,?)",
+                       (survey_id, slug, json.dumps(data, ensure_ascii=False), utc_now(), utc_now()))
+            audit("create", f"surveys:{survey_id}")
+        return jsonify(survey_item(survey_row(survey_id))), 201
+
+    @app.patch("/api/admin/surveys/<survey_id>")
+    @authenticated
+    def update_survey(survey_id):
+        source = payload()
+        db = connection()
+        with db:
+            db.execute("BEGIN IMMEDIATE")
+            row = survey_row(survey_id)
+            previous = json.loads(row["data"])
+            merged = {**previous, **{key: value for key, value in source.items() if key != "slug"}}
+            slug = survey_slug(source["slug"]) if "slug" in source else row["slug"]
+            data = survey_definition(merged, text_field)
+            responses = db.execute("SELECT COUNT(*) FROM survey_responses WHERE survey_id=?", (survey_id,)).fetchone()[0]
+            if responses and "questions" in source and data["questions"] != previous["questions"]:
+                raise APIError("Esta pesquisa já tem respostas. Para mudar as perguntas, apague as respostas antes.", 409)
+            if slug != row["slug"] and db.execute("SELECT 1 FROM surveys WHERE slug=? AND deleted=0", (slug,)).fetchone():
+                raise APIError("Este link já pertence a outra pesquisa.", 409)
+            db.execute("UPDATE surveys SET slug=?, data=?, updated_at=? WHERE id=?",
+                       (slug, json.dumps(data, ensure_ascii=False), utc_now(), survey_id))
+            audit("update", f"surveys:{survey_id}")
+        return jsonify(survey_item(survey_row(survey_id)))
+
+    @app.delete("/api/admin/surveys/<survey_id>")
+    @authenticated
+    def delete_survey(survey_id):
+        db = connection()
+        with db:
+            survey_row(survey_id)
+            db.execute("UPDATE surveys SET deleted=1, updated_at=? WHERE id=?", (utc_now(), survey_id))
+            audit("delete", f"surveys:{survey_id}")
+        return jsonify(ok=True)
+
+    @app.delete("/api/admin/surveys/<survey_id>/responses")
+    @authenticated
+    def clear_survey_responses(survey_id):
+        db = connection()
+        with db:
+            survey_row(survey_id)
+            removed = db.execute("DELETE FROM survey_responses WHERE survey_id=?", (survey_id,)).rowcount
+            audit("clear-responses", f"surveys:{survey_id}")
+        return jsonify(ok=True, removed=removed)
+
+    @app.get("/api/admin/surveys/<survey_id>/results")
+    @authenticated
+    def survey_results_view(survey_id):
+        row = survey_row(survey_id)
+        survey = json.loads(row["data"])
+        rows = connection().execute("SELECT answers FROM survey_responses WHERE survey_id=?", (survey_id,)).fetchall()
+        return jsonify(survey={"id": row["id"], "slug": row["slug"], "title": survey["title"], "open": survey["open"],
+                               "link": survey_link(row["slug"])},
+                       **survey_results(survey, rows))
+
+    @app.get("/api/admin/surveys/<survey_id>/qr.<extension>")
+    @authenticated
+    def survey_qr(survey_id, extension):
+        if extension not in {"svg", "png"}:
+            raise APIError("Não encontrado.", 404)
+        import segno  # Imported lazily so the public site never depends on it.
+        row = survey_row(survey_id)
+        code = segno.make(survey_link(row["slug"]), error="m")
+        buffer = io.BytesIO()
+        if extension == "svg":
+            code.save(buffer, kind="svg", scale=10, border=2, dark="#13231b", light="#ffffff", xmldecl=False)
+            mimetype = "image/svg+xml"
+        else:
+            code.save(buffer, kind="png", scale=24, border=2, dark="#13231b", light="#ffffff")
+            mimetype = "image/png"
+        response = app.response_class(buffer.getvalue(), mimetype=mimetype)
+        if request.args.get("download") == "1":
+            response.headers["Content-Disposition"] = f'attachment; filename="qrcode-{row["slug"]}.{extension}"'
+        return response
+
     @app.get("/api/health")
     def health():
         connection().execute("SELECT 1").fetchone()
@@ -965,6 +1263,10 @@ def create_app(test_config=None):
     @app.get("/admin/")
     def admin_page():
         return send_from_directory(app.config["ADMIN_ROOT"], "index.html")
+
+    @app.get("/admin/apresentar")
+    def admin_presentation():
+        return send_from_directory(app.config["ADMIN_ROOT"], "apresentar.html")
 
     @app.get("/admin/<path:filename>")
     def admin_asset(filename):
@@ -977,6 +1279,10 @@ def create_app(test_config=None):
     @app.get("/")
     def home():
         return send_from_directory(app.config["SITE_ROOT"], "index.html")
+
+    @app.get("/pesquisa/")
+    def survey_page():
+        return send_from_directory(app.config["SITE_ROOT"] / "pesquisa", "index.html")
 
     @app.get("/<directory>/<path:filename>")
     def public_asset(directory, filename):

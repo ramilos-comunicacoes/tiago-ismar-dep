@@ -103,3 +103,17 @@ python -m server.app backup --output /caminho/privado/novo-backup.sqlite3
 ```
 
 O destino deve ser novo e ficar fora da raiz pública. Copie também `TIAGO_DATA_DIR/uploads`. Não publique backups, banco, sessões ou hashes de senha. Antes de atualizar o serviço em produção, mantenha a cópia do banco e as imagens; releases estáticas e dados do painel têm ciclos separados.
+
+## Pesquisas anônimas
+
+Formulário público em `/pesquisa/?s=<link>` (arquivo estático `pesquisa/index.html`, publicado pelo `deploy-release.py`). As respostas guardam só as escolhas e o dia; não guardam nome, IP, sessão nem horário exato. As respostas escritas saem em ordem aleatória nos resultados. A pesquisa inicial do trade turístico vem de `server/surveys.json` e é criada uma única vez.
+
+| Rota | Uso |
+| --- | --- |
+| `GET /api/public/surveys/<link>` | Perguntas da pesquisa. |
+| `POST /api/public/surveys/<link>/responses` | Envia `{ "answers": {...} }`; exige `Origin`. |
+| `GET/POST /api/admin/surveys`, `PATCH/DELETE /api/admin/surveys/<id>` | Gerencia pesquisas. Com respostas, as perguntas ficam travadas. |
+| `GET /api/admin/surveys/<id>/results` | Resultados agregados para os gráficos. |
+| `GET /api/admin/surveys/<id>/qr.svg` ou `.png` (`?download=1`) | QR code do link público. |
+| `DELETE /api/admin/surveys/<id>/responses` | Apaga as respostas (limpar testes). |
+| `/admin/apresentar?id=<id>` | Tela de gráficos para projetar, com QR code e PDF. |

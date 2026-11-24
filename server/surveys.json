@@ -1,0 +1,25 @@
+{
+  "surveys": [
+    {
+      "slug": "trade-turistico-tiangua",
+      "title": "Pesquisa do trade turístico de Tianguá",
+      "intro": "Leva uns 3 minutos. É anônima: não pedimos nome, telefone nem empresa. As respostas viram gráficos para a nossa conversa na reunião.",
+      "thanks": "Obrigado! Sua resposta já está nos gráficos da reunião.",
+      "open": true,
+      "questions": [
+        {"id": "segmento", "type": "single", "required": true, "text": "Qual é o segmento do seu negócio?", "options": ["Hospedagem (hotel, pousada, chalé)", "Alimentação (restaurante, bar, café)", "Agência, guia ou receptivo", "Atrativo, lazer ou aventura", "Comércio ou artesanato", "Transporte", "Eventos", "Outro"]},
+        {"id": "momento", "type": "scale", "required": true, "text": "Como você avalia o momento atual do turismo em Tianguá?", "min_label": "Muito ruim", "max_label": "Muito bom"},
+        {"id": "movimento", "type": "single", "required": true, "text": "Nos últimos 12 meses, o movimento do seu negócio, comparado ao ano anterior:", "options": ["Cresceu muito", "Cresceu um pouco", "Ficou igual", "Caiu um pouco", "Caiu muito"]},
+        {"id": "desafios", "type": "multiple", "required": true, "max": 3, "text": "Quais são os maiores desafios do seu negócio hoje? (até 3)", "options": ["Baixa temporada e sazonalidade", "Pouca divulgação da cidade", "Falta de mão de obra qualificada", "Estradas, acesso e sinalização", "Custos e impostos", "Concorrência informal", "Poucos eventos e atrativos estruturados", "Acesso a crédito", "Segurança"]},
+        {"id": "prioridade", "type": "single", "required": true, "text": "Se fosse para investir primeiro em uma coisa pelo turismo da cidade, qual seria?", "options": ["Divulgação e marketing do destino", "Calendário de eventos o ano todo", "Infraestrutura e sinalização turística", "Qualificação profissional", "Novos roteiros e atrativos", "Integração com as cidades da Ibiapaba"]},
+        {"id": "origem", "type": "single", "required": true, "text": "De onde vem a maior parte dos seus clientes?", "options": ["Tianguá e região da Ibiapaba", "Fortaleza e interior do Ceará", "Piauí", "Outros estados", "Exterior"]},
+        {"id": "canais", "type": "multiple", "required": true, "max": 3, "text": "Por onde os clientes mais chegam até você? (até 3)", "options": ["Instagram e redes sociais", "Indicação, boca a boca", "Google e Google Maps", "Booking, Airbnb e outras plataformas", "WhatsApp", "Agências e operadoras", "Passando na rua / na estrada"]},
+        {"id": "uniao", "type": "scale", "required": true, "text": "Como você avalia a união e a cooperação entre os empresários do trade?", "min_label": "Muito fraca", "max_label": "Muito forte"},
+        {"id": "poder_publico", "type": "scale", "required": true, "text": "Como você avalia o apoio do poder público ao turismo hoje?", "min_label": "Muito fraco", "max_label": "Muito forte"},
+        {"id": "rede", "type": "single", "required": true, "text": "Você participaria de uma rede do trade, com reuniões periódicas e ações em conjunto?", "options": ["Sim, com certeza", "Talvez, depende do formato", "Não"]},
+        {"id": "investimento", "type": "single", "required": true, "text": "Quanto você investiria por mês em uma campanha conjunta de divulgação de Tianguá?", "options": ["Nada no momento", "Até R$ 100", "De R$ 100 a R$ 300", "De R$ 300 a R$ 500", "Mais de R$ 500"]},
+        {"id": "sugestao", "type": "text", "required": false, "text": "Que ideia ou sugestão você deixaria para fortalecer o turismo de Tianguá?"}
+      ]
+    }
+  ]
+}

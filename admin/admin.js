@@ -15,6 +15,7 @@
     overview: { title: 'Visão geral', description: 'Um olhar sobre o seu site.' },
     settings: { title: 'Configurações', description: 'Gerencie as inscrições da capela, os textos e os contatos do site.' },
     rsvps: { title: 'Confirmações', description: 'Inscrições nos projetos e presenças nos eventos.' },
+    surveys: { title: 'Pesquisas', description: 'Formulários anônimos com QR code e gráficos das respostas.' },
   };
   const projectLabels = { idea: 'Ideia', planning: 'Em planejamento', in_progress: 'Em andamento', completed: 'Concluído' };
   const confirmationDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Fortaleza' });
@@ -44,6 +45,7 @@
   }
   function notify(text, error = false) { const el = $('#app-status'); el.textContent = text; el.classList.toggle('error', error); }
   function showLogin() { $('#boot').hidden = true; $('#admin-view').hidden = true; $('#login-view').hidden = false; if ($('#editor').open) $('#editor').close(); if ($('#confirm-dialog').open) $('#confirm-dialog').close(); if (signupDialog.open) signupDialog.close(); if (rsvpDialog?.open) rsvpDialog.close(); if (signupDialogEl?.open) signupDialogEl.close(); clearConfirmations(); data = {}; }
+  window.TiagoAdmin = { api: (...args) => api(...args), notify: (...args) => notify(...args), ask: (...args) => askConfirmation(...args) };
   async function loadData() { data = await api('/api/admin/content'); }
   async function showAdmin() {
     await loadData();
@@ -59,6 +61,7 @@
     $$('#admin-nav button').forEach(button => { if (button.dataset.view === view) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current'); });
     $('#overview-panel').hidden = view !== 'overview'; $('#records-panel').hidden = !kinds[view]; $('#settings-panel').hidden = view !== 'settings'; $('#add-item').hidden = !kinds[view];
     $('#rsvps-panel').hidden = view !== 'rsvps';
+    $('#surveys-panel').hidden = view !== 'surveys';
     const page = kinds[view] || pages[view];
     $('#view-title').textContent = page.title;
     $('#view-description').textContent = page.description;
@@ -73,6 +76,7 @@
       renderRecords();
     } else if (view === 'overview') renderOverview();
     else if (view === 'rsvps') loadConfirmations();
+    else if (view === 'surveys') window.TiagoSurveys?.show();
     else fillSettings();
   }
   function clearConfirmations() {

@@ -37,7 +37,7 @@ def require(condition, message):
 
 def static_file(path):
     return (
-        path == PurePosixPath("index.html")
+        path in {PurePosixPath("index.html"), PurePosixPath("pesquisa/index.html")}
         or (path.parts[0] == "css" and path.suffix.lower() == ".css")
         or (path.parts[0] == "js" and path.suffix.lower() == ".js")
         or (path.parts[0] == "assets" and path.suffix.lower() in ASSET_TYPES)
@@ -106,6 +106,12 @@ def validate_release(release):
     require("tiago ismar" in " ".join(parser.title).casefold(), "Unexpected or missing page title.")
     for reference in parser.references:
         validate_reference(release, reference)
+    survey = release / "pesquisa" / "index.html"
+    if survey.is_file():
+        survey_parser = PageReferences()
+        survey_parser.feed(survey.read_text(encoding="utf-8"))
+        for reference in survey_parser.references:
+            validate_reference(release, reference, PurePosixPath("pesquisa"))
     for css in (release / "css").rglob("*.css"):
         content = css.read_text(encoding="utf-8")
         # Consume a quoted URL as one token: embedded SVG data can itself contain url(...).

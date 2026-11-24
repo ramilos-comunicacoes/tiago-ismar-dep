@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#13231b">
+  <title>Resultados da pesquisa · Tiago Ismar</title>
+  <link rel="icon" href="/assets/personal-favicon.svg?v=8">
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/admin/apresentar.css?v=1">
+  <script src="/admin/apresentar.js?v=1" defer></script>
+</head>
+<body>
+  <header class="bar">
+    <img class="brand" src="/assets/brand/tiago-ismar-logo-light.svg?v=8" alt="Tiago Ismar" width="588" height="124">
+    <div class="bar-actions">
+      <button id="mode" type="button" aria-pressed="false">Uma por vez</button>
+      <button id="show-qr" type="button"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#qr-code"></use></svg>QR code</button>
+      <button id="fullscreen" type="button"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#maximize"></use></svg>Tela cheia</button>
+      <button id="print" type="button"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#printer"></use></svg>PDF</button>
+    </div>
+  </header>
+  <main id="results" tabindex="-1">
+    <section class="summary">
+      <div><p class="eyebrow">PESQUISA ANÔNIMA · RESULTADOS</p><h1 id="title">Carregando…</h1><p id="updated" class="muted" role="status"></p></div>
+      <div class="total"><strong id="total">–</strong><span id="total-label">respostas</span></div>
+    </section>
+    <div id="charts" class="charts"></div>
+    <nav id="slide-nav" class="slide-nav" hidden aria-label="Navegar entre perguntas"><button id="prev" type="button" aria-label="Pergunta anterior"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#arrow-left"></use></svg></button><span id="slide-pos"></span><button id="next" type="button" aria-label="Próxima pergunta"><svg aria-hidden="true"><use href="/assets/icons/lucide.svg#arrow-right"></use></svg></button></nav>
+  </main>
+  <div id="qr-overlay" class="qr-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="qr-title">
+    <div class="qr-card">
+      <p class="eyebrow">RESPONDA PELO CELULAR</p>
+      <h2 id="qr-title">Aponte a câmera para o QR code</h2>
+      <img id="qr-image" alt="QR code da pesquisa" width="420" height="420">
+      <p id="qr-link" class="qr-link"></p>
+      <p class="qr-count"><strong id="qr-total">0</strong> <span id="qr-total-label">respostas até agora</span></p>
+      <button id="close-qr" type="button">Ver gráficos</button>
+    </div>
+  </div>
+</body>
+</html>

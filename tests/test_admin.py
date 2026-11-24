@@ -626,3 +626,68 @@ def test_admin_crud_project_signups_and_event_rsvps(configured):
     [cur_event_after] = [ev for ev in rsvps_list_after if ev["id"] == e_id]
     assert len(cur_event_after["registrations"]) == 0
 
+
+
+def test_survey_is_anonymous_validated_and_aggregated(configured):
+    app, password = configured
+    public = app.test_client()
+    origin = {"Origin": "http://localhost"}
+    survey = public.get("/api/public/surveys/trade-turistico-tiangua").json
+    assert survey["open"] and len(survey["questions"]) == 12
+    questions = {question["id"]: question for question in survey["questions"]}
+    answer = {
+        "segmento": questions["segmento"]["options"][0], "momento": 4, "movimento": "Cresceu um pouco",
+        "desafios": questions["desafios"]["options"][:3], "prioridade": questions["prioridade"]["options"][1],
+        "origem": questions["origem"]["options"][0], "canais": ["WhatsApp"], "uniao": 2, "poder_publico": 3,
+        "rede": "Sim, com certeza", "investimento": "Até R$ 100", "sugestao": "Mais eventos na baixa temporada",
+    }
+    url = "/api/public/surveys/trade-turistico-tiangua/responses"
+    assert public.post(url, json={"answers": answer}).status_code == 403  # Origin required
+    assert public.post(url, json={"answers": {**answer, "momento": 9}}, headers=origin).status_code == 400
+    assert public.post(url, json={"answers": {**answer, "desafios": questions["desafios"]["options"][:4]}}, headers=origin).status_code == 400
+    assert public.post(url, json={"answers": {**answer, "extra": "x"}}, headers=origin).status_code == 409
+    missing = dict(answer); missing.pop("rede")
+    assert public.post(url, json={"answers": missing}, headers=origin).status_code == 400
+    optional = dict(answer); optional.pop("sugestao")
+    assert public.post(url, json={"answers": answer}, headers=origin).status_code == 200
+    assert public.post(url, json={"answers": {**optional, "momento": 2}}, headers=origin).status_code == 200
+    with sqlite3.connect(app.config["DATA_DIR"] / "content.sqlite3") as db:
+        columns = {row[1] for row in db.execute("PRAGMA table_info(survey_responses)")}
+        assert columns == {"id", "survey_id", "answers", "answered_on"}
+
+    assert public.get("/api/admin/surveys").status_code == 401
+    client, headers = login(app, password)
+    listed = client.get("/api/admin/surveys").json["surveys"]
+    assert listed[0]["responses"] == 2 and listed[0]["link"].endswith("/pesquisa/?s=trade-turistico-tiangua")
+    survey_id = listed[0]["id"]
+    results = client.get(f"/api/admin/surveys/{survey_id}/results").json
+    assert results["total"] == 2
+    by_id = {question["id"]: question for question in results["questions"]}
+    assert by_id["momento"]["average"] == 3.0
+    assert {o["label"]: o["count"] for o in by_id["canais"]["options"]}["WhatsApp"] == 2
+    assert by_id["sugestao"]["answers"] == ["Mais eventos na baixa temporada"]
+    assert client.get(f"/api/admin/surveys/{survey_id}/qr.svg").data.startswith(b"<svg")
+    assert client.get(f"/api/admin/surveys/{survey_id}/qr.png").data.startswith(b"\x89PNG")
+
+    # Questions are locked once there are answers; title and open state stay editable.
+    changed = [dict(question) for question in survey["questions"]][:3]
+    locked = client.patch(f"/api/admin/surveys/{survey_id}", json={"questions": changed}, headers=headers)
+    assert locked.status_code == 409
+    assert client.patch(f"/api/admin/surveys/{survey_id}", json={"open": False}, headers=headers).status_code == 200
+    assert public.post(url, json={"answers": answer}, headers=origin).status_code == 409
+    assert client.delete(f"/api/admin/surveys/{survey_id}/responses", headers=headers).json["removed"] == 2
+    assert client.patch(f"/api/admin/surveys/{survey_id}", json={"questions": changed, "open": True}, headers=headers).status_code == 200
+
+    created = client.post("/api/admin/surveys", headers=headers, json={
+        "title": "Outra", "slug": "outra-pesquisa", "open": True,
+        "questions": [{"type": "single", "text": "Sim ou não?", "options": ["Sim", "Não"]}],
+    })
+    assert created.status_code == 201
+    assert client.post("/api/admin/surveys", headers=headers, json={
+        "title": "Repetida", "slug": "outra-pesquisa", "questions": [{"type": "text", "text": "?"}],
+    }).status_code == 409
+    assert client.post("/api/admin/surveys", headers=headers, json={
+        "title": "Ruim", "slug": "ruim", "questions": [{"type": "single", "text": "?", "options": ["Só uma"]}],
+    }).status_code == 400
+    assert client.delete(f"/api/admin/surveys/{created.json['id']}", headers=headers).status_code == 200
+    assert public.get("/api/public/surveys/outra-pesquisa").status_code == 404

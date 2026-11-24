@@ -111,3 +111,33 @@
     min-height: 46px;
   }
 }
+/* Pesquisas anônimas */
+.survey-cards{display:grid;gap:14px;margin-top:16px}
+.survey-card{background:#fff;border-radius:12px;padding:20px;display:grid;gap:12px;min-width:0}
+.survey-card-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.survey-card-head h2{font-size:30px;margin:6px 0 4px}
+.survey-card-head p{margin:0}
+.survey-count{font-family:var(--display);font-size:56px;line-height:1;color:var(--forest)}
+.survey-state{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#e8ecdf}
+.survey-state.open{background:var(--lime);color:var(--forest)}
+.survey-link{font-weight:700;overflow-wrap:anywhere;color:var(--forest)}
+.survey-card .toolbar-actions a{text-decoration:none}
+.survey-danger{border-top:1px dashed var(--line);padding-top:8px}
+.survey-danger .subtle{margin:0;min-height:44px}
+.qr-body{padding:20px;display:grid;gap:14px;justify-items:center;text-align:center}
+.qr-body img{width:min(100%,320px);height:auto;aspect-ratio:1;background:#fff;border-radius:12px;padding:10px}
+.qr-link{margin:0;overflow-wrap:anywhere;font-weight:700}
+.qr-body .toolbar-actions{justify-content:center}
+.qr-body .toolbar-actions a{text-decoration:none}
+.survey-questions{display:grid;gap:14px}
+.survey-question{border:1px solid var(--line);border-radius:10px;padding:14px 16px 16px;margin:0;display:grid;gap:12px;background:#fff;min-width:0}
+.survey-question legend{font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:0 6px}
+.survey-question label{margin:0}
+.survey-question textarea,.survey-question input:not([type=checkbox]),.survey-question select{width:100%}
+.survey-question-tools{display:flex;gap:8px;justify-content:flex-end}
+.survey-question-tools .round{width:44px;min-height:44px;padding:10px}
+.survey-question:disabled{opacity:.75}
+.survey-question:disabled .survey-question-tools{display:none}
+.inline-check{display:flex;align-items:center;gap:10px;font-size:15px}
+.inline-check input{width:22px;height:22px;accent-color:var(--forest)}
+@media (max-width:599px){.survey-count{font-size:44px}.survey-card-head h2{font-size:26px}}

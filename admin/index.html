@@ -9,8 +9,8 @@
   <link rel="icon" href="/assets/personal-favicon.svg?v=8">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/admin/admin.css?v=6">
-  <script src="/admin/admin.js?v=8" defer></script>
-  <script src="/admin/surveys.js?v=1" defer></script>
+  <script src="/admin/admin.js?v=9" defer></script>
+  <script src="/admin/surveys.js?v=2" defer></script>
 </head>
 <body>
   <a class="skip" href="#workspace">Ir para o conteúdo</a>
@@ -108,6 +108,7 @@
         <label for="survey-thanks">Mensagem depois de enviar<input id="survey-thanks" maxlength="600"></label>
         <div class="field wide switch-field"><input id="survey-open" type="checkbox"><label for="survey-open">Aberta para receber respostas<p>Fechada, o link mostra “Pesquisa encerrada”.</p></label></div>
         <p id="survey-locked" class="field-note" hidden>Esta pesquisa já tem respostas, então as perguntas estão travadas para não misturar os gráficos. Para mudá-las, apague as respostas antes.</p>
+        <button id="unlock-survey" class="secondary" type="button" hidden>Apagar respostas e liberar as perguntas</button>
         <div id="survey-questions" class="survey-questions"></div>
         <button id="add-survey-question" class="secondary" type="button">Adicionar pergunta</button>
       </div>

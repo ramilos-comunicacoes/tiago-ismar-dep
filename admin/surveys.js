@@ -5,6 +5,7 @@
   const admin = () => window.TiagoAdmin;
   const typeLabels = { single: 'Uma opção', multiple: 'Várias opções', scale: 'Nota de 1 a 5', text: 'Resposta escrita' };
   let surveys = [], editing = null, request = 0;
+  let linked = new URLSearchParams(location.search).get('pesquisa');
 
   const count = (total) => `${total.toLocaleString('pt-BR')} ${total === 1 ? 'resposta' : 'respostas'}`;
   const presentUrl = (survey) => `/admin/apresentar?id=${encodeURIComponent(survey.id)}`;
@@ -17,6 +18,12 @@
       if (ticket !== request) return;
       surveys = result.surveys;
       render();
+      if (linked) {
+        const target = surveys.find(item => item.id === linked);
+        linked = null;
+        history.replaceState(null, '', '/admin/');
+        if (target) openEditor(target);
+      }
     } catch (error) {
       if (ticket === request) $('#surveys-status').textContent = error.message;
     }
@@ -173,6 +180,7 @@
     $('#survey-questions').replaceChildren(...editing.questions.map((question, index) => questionEditor(question, index, locked)));
     $('#add-survey-question').hidden = locked;
     $('#survey-locked').hidden = !locked;
+    $('#unlock-survey').hidden = !locked;
   }
 
   function openEditor(survey) {
@@ -217,6 +225,16 @@
     $('#close-survey-editor').addEventListener('click', () => $('#survey-editor').close());
     $('#cancel-survey-editor').addEventListener('click', () => $('#survey-editor').close());
     $('#survey-editor-form').addEventListener('submit', save);
+    $('#unlock-survey').addEventListener('click', () => {
+      if (!editing?.id) return;
+      admin().ask('Apagar respostas e liberar?', `As ${count(editing.responses)} desta pesquisa serão apagadas de vez para você poder mudar as perguntas.`, async () => {
+        await admin().api(`/api/admin/surveys/${encodeURIComponent(editing.id)}/responses`, { method: 'DELETE' });
+        editing.responses = 0;
+        drawQuestions();
+        admin().notify('Respostas apagadas. As perguntas estão liberadas.');
+        load();
+      }, 'Apagar respostas');
+    });
     $('#add-survey-question').addEventListener('click', () => { readQuestions(); editing.questions.push({ type: 'single', text: '', options: [], required: true }); drawQuestions(); $('#survey-questions').lastElementChild?.querySelector('textarea')?.focus(); });
     $('#survey-title').addEventListener('input', () => { if (!$('#survey-slug').dataset.touched) $('#survey-slug').value = slugify($('#survey-title').value); });
     $('#survey-slug').addEventListener('input', () => { $('#survey-slug').dataset.touched = '1'; });

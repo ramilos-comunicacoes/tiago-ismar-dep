@@ -136,6 +136,24 @@
   $('#close-qr').addEventListener('click', () => { $('#qr-overlay').hidden = true; $('#show-qr').focus(); });
   $('#fullscreen').addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); });
   $('#print').addEventListener('click', () => window.print());
+  $('#edit').href = `/admin/?pesquisa=${encodeURIComponent(id)}`;
+  $('#reset').addEventListener('click', async () => {
+    if (!confirm('Zerar todas as respostas desta pesquisa? Elas serão apagadas de vez.')) return;
+    const button = $('#reset');
+    button.disabled = true;
+    try {
+      const session = await (await fetch('/api/admin/session', { credentials: 'same-origin' })).json();
+      const response = await fetch(`/api/admin/surveys/${encodeURIComponent(id)}/responses`, {
+        method: 'DELETE', credentials: 'same-origin', headers: { 'X-CSRF-Token': session.csrf_token || '' },
+      });
+      const reply = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(reply.error || 'Não foi possível zerar.');
+      lastSignature = '';
+      await load();
+      $('#updated').textContent = `Respostas zeradas · ${time.format(new Date())}`;
+    } catch (error) { alert(error.message); }
+    finally { button.disabled = false; }
+  });
 
   if (!/^[a-f0-9]{24}$/.test(id)) notice('Pesquisa não encontrada. Abra pelo painel.');
   else { load(); timer = setInterval(load, 8000); }

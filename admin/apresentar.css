@@ -11,7 +11,8 @@ svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 .bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:calc(12px + env(safe-area-inset-top)) var(--gutter) 12px;background:var(--forest)}
 .brand{width:130px;height:auto;display:block}
 .bar-actions{display:flex;flex-wrap:wrap;gap:8px}
-.bar-actions button,#close-qr{min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;border:1.5px solid #ffffff40;background:transparent;color:#fff;font-weight:700;font-size:14px}
+.bar-actions button,.bar-actions a,#close-qr{text-decoration:none;min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;border:1.5px solid #ffffff40;background:transparent;color:#fff;font-weight:700;font-size:14px}
+.bar-actions #reset{border-color:#ff8a8066;color:#ffb4ab}
 .bar-actions button[aria-pressed=true]{background:var(--lime);color:var(--forest);border-color:var(--lime)}
 
 main{padding:24px var(--gutter) 48px;max-width:1500px;margin:0 auto;outline:none}

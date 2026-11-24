@@ -19,7 +19,7 @@
   };
   const projectLabels = { idea: 'Ideia', planning: 'Em planejamento', in_progress: 'Em andamento', completed: 'Concluído' };
   const confirmationDate = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Fortaleza' });
-  let csrf = '', data = {}, stats = {}, currentView = 'overview', editing = null, editorDirty = false, uploadBusy = false, deleting = false;
+  let csrf = '', data = {}, stats = {}, currentView = new URLSearchParams(location.search).has('pesquisa') ? 'surveys' : 'overview', editing = null, editorDirty = false, uploadBusy = false, deleting = false;
   let confirmationsRequest = null;
   let projectSignupsRequest = null;
   let latestConfirmations = null;
